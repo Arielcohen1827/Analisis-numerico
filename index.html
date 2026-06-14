@@ -1,328 +1,1509 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Propagación de Error V2</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Calculadora interactiva de propagación de errores mediante Taylor de primer orden.">
+  <title>Propagación de Error · Calculadora V3</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<script>
-window.MathJax = {
-  tex:{inlineMath:[['$','$'],['\\(','\\)']]}
-};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <!-- Math.js: análisis, evaluación y derivación simbólica -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.2/math.min.js"></script>
+
+  <!-- MathJax: renderizado matemático -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Exportación a PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --page-bg: #f1f5f9;
+      --panel-bg: #ffffff;
+      --soft-bg: #f8fafc;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #dbe3ee;
+      --key-bg: #ffffff;
+      --key-hover: #eff6ff;
+      --key-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+    }
+
+    html.dark {
+      color-scheme: dark;
+      --page-bg: #07111f;
+      --panel-bg: #0f1b2d;
+      --soft-bg: #122238;
+      --text-main: #e5edf8;
+      --text-muted: #9fb0c8;
+      --border: #2b3c55;
+      --key-bg: #16263d;
+      --key-hover: #203858;
+      --key-shadow: 0 1px 2px rgba(0, 0, 0, .28);
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, .09), transparent 28rem),
+        var(--page-bg);
+      color: var(--text-main);
+      transition: background-color .2s ease, color .2s ease;
+    }
+
+    .app-panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      transition: background-color .2s ease, border-color .2s ease;
+    }
+
+    .soft-panel {
+      background: var(--soft-bg);
+      border: 1px solid var(--border);
+    }
+
+    .muted {
+      color: var(--text-muted);
+    }
+
+    .field {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      color: var(--text-main);
+      border-radius: .85rem;
+      padding: .75rem .9rem;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .2s ease;
+    }
+
+    .field:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+    }
+
+    .field.invalid {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
+    }
+
+    .calc-key {
+      min-height: 2.85rem;
+      border: 1px solid var(--border);
+      border-radius: .8rem;
+      background: var(--key-bg);
+      color: var(--text-main);
+      box-shadow: var(--key-shadow);
+      font-weight: 700;
+      transition: transform .08s ease, background-color .15s ease, border-color .15s ease;
+      user-select: none;
+    }
+
+    .calc-key:hover {
+      background: var(--key-hover);
+      border-color: #93b4e8;
+    }
+
+    .calc-key:active {
+      transform: scale(.97);
+    }
+
+    .calc-key.operator {
+      background: rgba(37, 99, 235, .10);
+      color: #2563eb;
+      border-color: rgba(37, 99, 235, .28);
+    }
+
+    html.dark .calc-key.operator {
+      color: #93c5fd;
+    }
+
+    .calc-key.danger {
+      background: rgba(220, 38, 38, .10);
+      color: #dc2626;
+      border-color: rgba(220, 38, 38, .28);
+    }
+
+    html.dark .calc-key.danger {
+      color: #fca5a5;
+    }
+
+    .calc-key.equal {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+
+    .result-card {
+      animation: reveal .28s ease-out;
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .math-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: thin;
+    }
+
+    .toast-enter {
+      animation: toastIn .2s ease-out;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media print {
+      body {
+        background: white !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #resultado {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
 </head>
 
-<body class="bg-slate-100 min-h-screen">
-
-<div class="max-w-6xl mx-auto p-6">
-
-<div class="flex justify-between items-center mb-6">
-<h1 class="text-3xl font-bold">Calculadora de Propagación de Error V2</h1>
-<button id="themeBtn" class="px-4 py-2 bg-slate-800 text-white rounded">🌙 Modo oscuro</button>
-</div>
-
-<div id="alert" class="hidden p-4 rounded mb-4"></div>
-
-<div class="bg-white rounded-xl shadow p-6">
-<label class="font-semibold">Función</label>
-<input id="funcion" class="w-full border p-3 rounded mt-2"
-placeholder="Ej: x^2*sin(y)+ln(z)">
-
-<div class="mt-4 bg-slate-50 p-4 rounded">
-<div class="text-sm text-slate-500">Vista previa</div>
-<div id="preview">\(f(x)\)</div>
-</div>
-
-<div id="variables" class="grid md:grid-cols-3 gap-4 mt-6"></div>
-
-<div class="flex gap-3 mt-6">
-<button id="calcBtn" class="bg-blue-600 text-white px-5 py-3 rounded">
-Calcular
-</button>
-
-<button id="pdfBtn" class="bg-green-600 text-white px-5 py-3 rounded">
-Guardar resultado
-</button>
-</div>
-</div>
-
-<div id="resultado" class="hidden mt-6 bg-white rounded-xl shadow p-6"></div>
-
-<div class="mt-6 bg-white rounded-xl shadow p-6">
-<h2 class="font-bold text-xl mb-3">Historial</h2>
-<ul id="history"></ul>
-</div>
-
-</div>
-
-<script>
-
-const RESERVED=[
-'sin','cos','tan','asin','acos','atan',
-'log','ln','sqrt','exp','abs','pi','e'
-];
-
-function showError(msg){
- const a=document.getElementById('alert');
- a.className='p-4 rounded mb-4 bg-red-100 text-red-700';
- a.textContent=msg;
- a.classList.remove('hidden');
-}
-
-function clearError(){
- document.getElementById('alert').classList.add('hidden');
-}
-
-function extractVariables(expr){
-
- const tokens=(expr.match(/[a-zA-Z]+/g)||[])
- .filter(v=>!RESERVED.includes(v.toLowerCase()));
-
- return [...new Set(tokens)];
-}
-
-function renderInputs(){
-
- const expr=document.getElementById('funcion').value;
- const vars=extractVariables(expr);
-
- const cont=document.getElementById('variables');
- cont.innerHTML='';
-
- vars.forEach(v=>{
-
-   cont.innerHTML+=`
-   <div class="border rounded p-4">
-     <h3 class="font-bold mb-2">${v}</h3>
-
-     <input type="number" step="any"
-       id="val_${v}"
-       placeholder="Valor ${v}"
-       class="w-full border p-2 rounded mb-2">
-
-     <input type="number" step="any"
-       id="err_${v}"
-       placeholder="Δ${v}"
-       class="w-full border p-2 rounded">
-   </div>
-   `;
- });
-
-}
-
-function updatePreview(){
-
- const expr=document.getElementById('funcion').value;
-
- document.getElementById('preview').innerHTML=
- `\\[${expr||'f(x)'}\\]`;
-
- renderInputs();
-
- if(window.MathJax){
-   MathJax.typesetPromise();
- }
-}
-
-document.getElementById('funcion')
-.addEventListener('input',updatePreview);
-
-updatePreview();
-
-function saveHistory(expr){
-
- let h=JSON.parse(localStorage.getItem('pe_history')||'[]');
-
- if(!h.includes(expr)){
-   h.unshift(expr);
- }
-
- h=h.slice(0,10);
-
- localStorage.setItem('pe_history',JSON.stringify(h));
-
- loadHistory();
-}
-
-function loadHistory(){
-
- const ul=document.getElementById('history');
-
- let h=JSON.parse(localStorage.getItem('pe_history')||'[]');
-
- ul.innerHTML='';
-
- h.forEach(item=>{
-
- ul.innerHTML+=`
- <li class="flex justify-between border-b py-2">
-   <span>${item}</span>
-   <button onclick="reuseHistory('${item}')"
-   class="text-blue-600">
-   Reutilizar
-   </button>
- </li>`;
-
- });
-
-}
-
-function reuseHistory(expr){
-
- document.getElementById('funcion').value=expr;
- updatePreview();
-}
-
-loadHistory();
-
-document.getElementById('calcBtn')
-.addEventListener('click',()=>{
-
- clearError();
-
- const expr=document.getElementById('funcion').value.trim();
-
- if(!expr){
-   showError('Ingrese una función.');
-   return;
- }
-
- try{
-   math.parse(expr);
- }
- catch{
-   showError('Expresión matemática inválida. Por favor, revise la sintaxis');
-   return;
- }
-
- const vars=extractVariables(expr);
-
- let scope={};
- let delta=0;
-
- let derivadas='';
-
- try{
-
-   vars.forEach(v=>{
-
-     const val=parseFloat(document.getElementById('val_'+v).value);
-     const err=parseFloat(document.getElementById('err_'+v).value);
-
-     if(isNaN(val)||isNaN(err)||err<=0){
-        throw new Error('datos');
-     }
-
-     scope[v]=val;
-
-   });
-
-   const f=math.evaluate(expr,scope);
-
-   vars.forEach(v=>{
-
-      const err=parseFloat(document.getElementById('err_'+v).value);
-
-      const d=math.derivative(expr,v);
-
-      const evald=d.evaluate(scope);
-
-      delta+=Math.abs(evald)*err;
-
-      derivadas+=`
-      <div class="mb-4">
-      \\[
-      \\frac{\\partial f}{\\partial ${v}}
-      =
-      ${d.toString()}
-      \\]
-
-      \\[
-      ${evald}
-      \\]
-      </div>`;
-   });
-
-   const rho=delta/Math.abs(f);
-   const porcentaje=rho*100;
-
-   document.getElementById('resultado').innerHTML=`
-   <h2 class="text-2xl font-bold mb-4">Resultados</h2>
-
-   <div class="mb-4">
-   <strong>Valor de la función:</strong>
-   \\[f=${f}\\]
-   </div>
-
-   <div>
-   <h3 class="font-bold">Derivadas parciales</h3>
-   ${derivadas}
-   </div>
-
-   <div class="bg-blue-50 p-4 rounded">
-   \\[
-   \\Delta f=${delta}
-   \\]
-
-   \\[
-   f=${f}\\pm${delta}
-   \\]
-
-   \\[
-   \\rho_f=${rho}
-   \\]
-
-   \\[
-   \\delta\\%=${porcentaje}
-   \\]
-   </div>
-   `;
-
-   document.getElementById('resultado')
-   .classList.remove('hidden');
-
-   saveHistory(expr);
-
-   MathJax.typesetPromise();
-
- }
- catch(e){
-
-   showError(
-   'Error: Ingrese solo números válidos en los campos de variables y cotas de error'
-   );
-
- }
-
-});
-
-document.getElementById('pdfBtn')
-.addEventListener('click',()=>{
-
- const content=document.getElementById('resultado').innerText;
-
- const blob=new Blob([content],{type:'text/plain'});
-
- const a=document.createElement('a');
-
- a.href=URL.createObjectURL(blob);
- a.download='resultado_propagacion_error.txt';
- a.click();
-
-});
-
-document.getElementById('themeBtn')
-.addEventListener('click',()=>{
-
- document.body.classList.toggle('bg-slate-900');
- document.body.classList.toggle('text-white');
-
-});
-
-</script>
+<body class="min-h-screen">
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+
+    <!-- Encabezado -->
+    <header class="no-print mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div class="mb-2 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-blue-700">
+          Taylor de primer orden
+        </div>
+        <h1 class="text-3xl font-black tracking-tight sm:text-4xl">
+          Propagación de Error
+        </h1>
+        <p class="muted mt-2 max-w-2xl">
+          Escribí la función o armala con la calculadora científica. Las variables y sus cotas se generan automáticamente.
+        </p>
+      </div>
+
+      <button
+        id="themeBtn"
+        type="button"
+        class="app-panel inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold shadow-sm"
+        aria-label="Cambiar tema"
+      >
+        <span id="themeIcon" aria-hidden="true">🌙</span>
+        <span id="themeText">Modo oscuro</span>
+      </button>
+    </header>
+
+    <!-- Alerta -->
+    <div
+      id="alertBox"
+      class="no-print hidden toast-enter mb-5 rounded-2xl border px-4 py-3 shadow-sm"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 text-xl" aria-hidden="true">⚠️</span>
+        <div class="min-w-0 flex-1">
+          <p id="alertTitle" class="font-extrabold"></p>
+          <p id="alertMessage" class="mt-0.5 text-sm"></p>
+        </div>
+        <button id="closeAlert" type="button" class="rounded-lg px-2 py-1 font-bold" aria-label="Cerrar alerta">×</button>
+      </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.06fr_.94fr]">
+
+      <!-- Panel de entrada -->
+      <section class="app-panel no-print rounded-3xl p-5 shadow-xl shadow-slate-900/5 sm:p-7">
+        <div class="mb-5">
+          <label for="funcion" class="mb-2 block text-sm font-extrabold uppercase tracking-wide">
+            Función f
+          </label>
+
+          <div class="relative">
+            <input
+              id="funcion"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Ej.: x^2*sin(y) + ln(z)"
+              class="field pr-24 font-mono text-base sm:text-lg"
+              aria-describedby="functionHelp"
+            >
+            <button
+              id="clearFunctionBtn"
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-50"
+            >
+              Limpiar
+            </button>
+          </div>
+
+          <p id="functionHelp" class="muted mt-2 text-xs sm:text-sm">
+            Podés usar teclado físico y calculadora en pantalla al mismo tiempo. <strong>ln(x)</strong> es el logaritmo natural y el botón <strong>log₁₀</strong> inserta el logaritmo en base 10.
+          </p>
+        </div>
+
+        <!-- Vista previa -->
+        <div class="soft-panel mb-5 rounded-2xl p-4">
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <span class="muted text-xs font-bold uppercase tracking-wide">Vista previa</span>
+            <span id="syntaxStatus" class="rounded-full px-2.5 py-1 text-xs font-bold">Esperando función</span>
+          </div>
+          <div id="preview" class="math-scroll min-h-14 py-2 text-center text-xl">
+            \[f(x)=\text{Ingrese una función}\]
+          </div>
+        </div>
+
+        <!-- Calculadora científica -->
+        <div class="mb-7">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-lg font-black">Calculadora científica</h2>
+            <span class="muted text-xs">Inserta en la posición del cursor</span>
+          </div>
+
+          <div class="soft-panel rounded-2xl p-3 sm:p-4">
+            <div class="mb-3 grid grid-cols-6 gap-2">
+              <button class="calc-key danger" data-action="clear" type="button">AC</button>
+              <button class="calc-key danger" data-action="backspace" type="button">⌫</button>
+              <button class="calc-key" data-action="left" type="button">←</button>
+              <button class="calc-key" data-action="right" type="button">→</button>
+              <button class="calc-key operator" data-insert="(" type="button">(</button>
+              <button class="calc-key operator" data-insert=")" type="button">)</button>
+            </div>
+
+            <div class="mb-3 grid grid-cols-5 gap-2 sm:grid-cols-6">
+              <button class="calc-key operator" data-template="sin()" data-offset="-1" type="button">sin</button>
+              <button class="calc-key operator" data-template="cos()" data-offset="-1" type="button">cos</button>
+              <button class="calc-key operator" data-template="tan()" data-offset="-1" type="button">tan</button>
+              <button class="calc-key operator" data-template="asin()" data-offset="-1" type="button">asin</button>
+              <button class="calc-key operator" data-template="acos()" data-offset="-1" type="button">acos</button>
+              <button class="calc-key operator" data-template="atan()" data-offset="-1" type="button">atan</button>
+
+              <button class="calc-key operator" data-template="sqrt()" data-offset="-1" type="button">√</button>
+              <button class="calc-key operator" data-template="ln()" data-offset="-1" type="button" title="Logaritmo natural">ln</button>
+              <button class="calc-key operator" data-template="log10()" data-offset="-1" type="button">log₁₀</button>
+              <button class="calc-key operator" data-template="exp()" data-offset="-1" type="button">exp</button>
+              <button class="calc-key operator" data-template="abs()" data-offset="-1" type="button">abs</button>
+              <button class="calc-key operator" data-template="()" data-offset="-1" type="button">( )</button>
+            </div>
+
+            <div class="grid grid-cols-5 gap-2">
+              <button class="calc-key" data-insert="7" type="button">7</button>
+              <button class="calc-key" data-insert="8" type="button">8</button>
+              <button class="calc-key" data-insert="9" type="button">9</button>
+              <button class="calc-key operator" data-insert="/" type="button">÷</button>
+              <button class="calc-key operator" data-insert="^" type="button">xʸ</button>
+
+              <button class="calc-key" data-insert="4" type="button">4</button>
+              <button class="calc-key" data-insert="5" type="button">5</button>
+              <button class="calc-key" data-insert="6" type="button">6</button>
+              <button class="calc-key operator" data-insert="*" type="button">×</button>
+              <button class="calc-key operator" data-template="^2" data-offset="0" type="button">x²</button>
+
+              <button class="calc-key" data-insert="1" type="button">1</button>
+              <button class="calc-key" data-insert="2" type="button">2</button>
+              <button class="calc-key" data-insert="3" type="button">3</button>
+              <button class="calc-key operator" data-insert="-" type="button">−</button>
+              <button class="calc-key operator" data-template="1/()" data-offset="-1" type="button">1/x</button>
+
+              <button class="calc-key" data-insert="0" type="button">0</button>
+              <button class="calc-key" data-insert="." type="button">.</button>
+              <button class="calc-key operator" data-insert="+" type="button">+</button>
+              <button class="calc-key operator" data-insert="pi" type="button">π</button>
+              <button class="calc-key operator" data-insert="e" type="button">e</button>
+            </div>
+
+            <div class="mt-3 grid grid-cols-6 gap-2">
+              <button class="calc-key" data-insert="x" type="button">x</button>
+              <button class="calc-key" data-insert="y" type="button">y</button>
+              <button class="calc-key" data-insert="z" type="button">z</button>
+              <button class="calc-key" data-insert="a" type="button">a</button>
+              <button class="calc-key" data-insert="b" type="button">b</button>
+              <button class="calc-key" data-insert="c" type="button">c</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Variables dinámicas -->
+        <div>
+          <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 class="text-lg font-black">Valores y cotas de error</h2>
+              <p class="muted text-sm">Cada cota Δ debe ser estrictamente mayor que cero.</p>
+            </div>
+            <span id="variableCount" class="rounded-full bg-blue-100 px-3 py-1 text-xs font-extrabold text-blue-700">
+              0 variables
+            </span>
+          </div>
+
+          <div id="variablesEmpty" class="soft-panel rounded-2xl p-5 text-center">
+            <p class="font-bold">Todavía no se detectaron variables.</p>
+            <p class="muted mt-1 text-sm">Ingresá una función como <span class="font-mono">x^2 + y</span>.</p>
+          </div>
+
+          <div id="variables" class="grid gap-4 md:grid-cols-2"></div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="mt-7 grid gap-3 sm:grid-cols-3">
+          <button
+            id="calcBtn"
+            type="button"
+            class="rounded-xl bg-blue-600 px-5 py-3.5 font-extrabold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 active:scale-[.99] sm:col-span-2"
+          >
+            Calcular propagación
+          </button>
+
+          <button
+            id="exampleBtn"
+            type="button"
+            class="app-panel rounded-xl px-5 py-3.5 font-extrabold transition hover:border-blue-300"
+          >
+            Cargar ejemplo
+          </button>
+        </div>
+      </section>
+
+      <!-- Columna derecha -->
+      <aside class="space-y-6">
+
+        <!-- Resultado -->
+        <section id="resultado" class="app-panel result-card hidden rounded-3xl p-5 shadow-xl shadow-slate-900/5 sm:p-7">
+        </section>
+
+        <!-- Estado vacío -->
+        <section id="resultPlaceholder" class="app-panel rounded-3xl p-7 text-center shadow-xl shadow-slate-900/5">
+          <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-3xl">∂</div>
+          <h2 class="text-xl font-black">El resultado aparecerá aquí</h2>
+          <p class="muted mx-auto mt-2 max-w-md text-sm">
+            Se mostrarán el valor de la función, las derivadas parciales, la sustitución en la fórmula y las cotas de error.
+          </p>
+        </section>
+
+        <!-- Historial -->
+        <section class="app-panel no-print rounded-3xl p-5 shadow-xl shadow-slate-900/5 sm:p-6">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-black">Historial</h2>
+              <p class="muted text-sm">Últimos 10 cálculos guardados en este navegador.</p>
+            </div>
+            <button id="clearHistoryBtn" type="button" class="rounded-lg px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50">
+              Vaciar
+            </button>
+          </div>
+
+          <div id="historyEmpty" class="soft-panel rounded-2xl p-4 text-center text-sm">
+            Aún no hay cálculos guardados.
+          </div>
+          <div id="history" class="space-y-2"></div>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="no-print muted mt-8 text-center text-xs">
+      Aproximación mediante desarrollo de Taylor de primer orden.
+    </footer>
+  </main>
+
+  <script>
+    'use strict';
+
+    // -----------------------------
+    // Referencias del DOM
+    // -----------------------------
+    const $ = (id) => document.getElementById(id);
+
+    const functionInput = $('funcion');
+    const preview = $('preview');
+    const syntaxStatus = $('syntaxStatus');
+    const variablesContainer = $('variables');
+    const variablesEmpty = $('variablesEmpty');
+    const variableCount = $('variableCount');
+    const resultPanel = $('resultado');
+    const resultPlaceholder = $('resultPlaceholder');
+    const historyContainer = $('history');
+    const historyEmpty = $('historyEmpty');
+
+    let previewTimer = null;
+    let lastResultData = null;
+    let currentVariables = [];
+
+    const variableValuesCache = new Map();
+
+    // Nombres permitidos que no deben tratarse como variables.
+    const KNOWN_FUNCTIONS = new Set([
+      'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
+      'sinh', 'cosh', 'tanh',
+      'sqrt', 'exp', 'abs', 'log', 'log10', 'ln',
+      'pow', 'min', 'max', 'floor', 'ceil', 'round',
+      'sign', 'mod'
+    ]);
+
+    const KNOWN_CONSTANTS = new Set([
+      'pi', 'e', 'i', 'Infinity', 'NaN', 'true', 'false'
+    ]);
+
+    // -----------------------------
+    // Utilidades
+    // -----------------------------
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function escapeLatexText(value) {
+      return String(value)
+        .replaceAll('\\', '\\textbackslash{}')
+        .replaceAll('{', '\\{')
+        .replaceAll('}', '\\}')
+        .replaceAll('_', '\\_')
+        .replaceAll('%', '\\%')
+        .replaceAll('#', '\\#')
+        .replaceAll('&', '\\&');
+    }
+
+    function formatNumber(value, precision = 10) {
+      const n = Number(value);
+
+      if (!Number.isFinite(n)) {
+        return String(value);
+      }
+
+      if (Object.is(n, -0)) {
+        return '0';
+      }
+
+      const abs = Math.abs(n);
+
+      if (abs !== 0 && (abs >= 1e8 || abs < 1e-6)) {
+        return n.toExponential(6).replace(/\.?0+e/, 'e');
+      }
+
+      return Number(n.toPrecision(precision)).toString();
+    }
+
+    function isFiniteReal(value) {
+      return typeof value === 'number' && Number.isFinite(value);
+    }
+
+    function safeTypeset(elements = undefined) {
+      if (!window.MathJax || !window.MathJax.typesetPromise) {
+        return Promise.resolve();
+      }
+
+      const promise = elements
+        ? window.MathJax.typesetPromise(elements)
+        : window.MathJax.typesetPromise();
+
+      promise.catch((error) => console.warn('MathJax:', error));
+      return promise;
+    }
+
+    function normalizeExpression(expression) {
+      return expression
+        .replaceAll('×', '*')
+        .replaceAll('÷', '/')
+        .replaceAll('−', '-')
+        // Math.js usa log(x) para el logaritmo natural.
+        // La interfaz permite escribir ln(x) y lo convierte solo internamente.
+        .replace(/\bln\s*\(/gi, 'log(')
+        .trim();
+    }
+
+    function naturalLogTex(tex) {
+      // Conserva log10 como base 10 y muestra únicamente log(...) natural como ln(...).
+      return String(tex)
+        .replace(/\\log\\left/g, '\\ln\\left')
+        .replace(/\\operatorname\{log\}\\left/g, '\\ln\\left');
+    }
+
+    function showAlert(title, message, type = 'error') {
+      const box = $('alertBox');
+
+      box.classList.remove(
+        'hidden',
+        'border-red-300', 'bg-red-50', 'text-red-800',
+        'border-amber-300', 'bg-amber-50', 'text-amber-900',
+        'border-green-300', 'bg-green-50', 'text-green-800'
+      );
+
+      const styles = {
+        error: ['border-red-300', 'bg-red-50', 'text-red-800'],
+        warning: ['border-amber-300', 'bg-amber-50', 'text-amber-900'],
+        success: ['border-green-300', 'bg-green-50', 'text-green-800']
+      };
+
+      box.classList.add(...(styles[type] || styles.error));
+      $('alertTitle').textContent = title;
+      $('alertMessage').textContent = message;
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideAlert() {
+      $('alertBox').classList.add('hidden');
+    }
+
+    function setSyntaxStatus(kind, text) {
+      syntaxStatus.textContent = text;
+      syntaxStatus.className = 'rounded-full px-2.5 py-1 text-xs font-bold';
+
+      if (kind === 'valid') {
+        syntaxStatus.classList.add('bg-green-100', 'text-green-700');
+      } else if (kind === 'invalid') {
+        syntaxStatus.classList.add('bg-red-100', 'text-red-700');
+      } else {
+        syntaxStatus.classList.add('bg-slate-200', 'text-slate-600');
+      }
+    }
+
+    // -----------------------------
+    // Conversión y análisis matemático
+    // -----------------------------
+    function parseExpression(expression) {
+      const normalized = normalizeExpression(expression);
+
+      if (!normalized) {
+        throw new Error('EMPTY_EXPRESSION');
+      }
+
+      return math.parse(normalized);
+    }
+
+    function expressionToTex(expression) {
+      const node = parseExpression(expression);
+      return naturalLogTex(node.toTex({ parenthesis: 'keep', implicit: 'show' }));
+    }
+
+    function extractVariables(expression) {
+      const node = parseExpression(expression);
+      const symbols = new Set();
+
+      node.traverse((child, path, parent) => {
+        if (!child || child.type !== 'SymbolNode') return;
+
+        const name = child.name;
+
+        // Si el símbolo es el nombre de una función en una llamada, no es variable.
+        const isFunctionName =
+          parent &&
+          parent.type === 'FunctionNode' &&
+          parent.fn === child;
+
+        if (
+          !isFunctionName &&
+          !KNOWN_FUNCTIONS.has(name) &&
+          !KNOWN_CONSTANTS.has(name)
+        ) {
+          symbols.add(name);
+        }
+      });
+
+      return [...symbols].sort((a, b) => a.localeCompare(b));
+    }
+
+    function validateKnownFunctions(node) {
+      node.traverse((child) => {
+        if (child && child.type === 'FunctionNode') {
+          const fnName = child.fn && child.fn.name;
+
+          if (fnName && !KNOWN_FUNCTIONS.has(fnName)) {
+            throw new Error(`UNKNOWN_FUNCTION:${fnName}`);
+          }
+        }
+      });
+    }
+
+    // -----------------------------
+    // Vista previa y variables dinámicas
+    // -----------------------------
+    function cacheCurrentVariableInputs() {
+      currentVariables.forEach((variable) => {
+        const valueInput = document.getElementById(`value_${variable}`);
+        const errorInput = document.getElementById(`delta_${variable}`);
+
+        if (valueInput || errorInput) {
+          variableValuesCache.set(variable, {
+            value: valueInput?.value ?? '',
+            delta: errorInput?.value ?? ''
+          });
+        }
+      });
+    }
+
+    function renderVariableInputs(variables) {
+      cacheCurrentVariableInputs();
+      currentVariables = variables;
+
+      variablesContainer.innerHTML = '';
+      variableCount.textContent = `${variables.length} ${variables.length === 1 ? 'variable' : 'variables'}`;
+
+      if (variables.length === 0) {
+        variablesEmpty.classList.remove('hidden');
+        return;
+      }
+
+      variablesEmpty.classList.add('hidden');
+
+      variables.forEach((variable) => {
+        const cached = variableValuesCache.get(variable) || { value: '', delta: '' };
+
+        const card = document.createElement('div');
+        card.className = 'soft-panel rounded-2xl p-4';
+
+        const safeVariable = escapeHtml(variable);
+
+        card.innerHTML = `
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-black">Variable ${safeVariable}</h3>
+            <span class="rounded-lg bg-blue-100 px-2.5 py-1 font-mono text-sm font-bold text-blue-700">${safeVariable}</span>
+          </div>
+
+          <label for="value_${safeVariable}" class="mb-1.5 block text-sm font-bold">
+            Valor aproximado
+          </label>
+          <input
+            id="value_${safeVariable}"
+            data-role="variable-value"
+            data-variable="${safeVariable}"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="Ej.: 2.5"
+            value="${escapeHtml(cached.value)}"
+            class="field mb-3"
+          >
+
+          <label for="delta_${safeVariable}" class="mb-1.5 block text-sm font-bold">
+            Cota de error Δ${safeVariable}
+          </label>
+          <input
+            id="delta_${safeVariable}"
+            data-role="variable-delta"
+            data-variable="${safeVariable}"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="Ej.: 0.01"
+            value="${escapeHtml(cached.delta)}"
+            class="field"
+          >
+        `;
+
+        variablesContainer.appendChild(card);
+      });
+    }
+
+    function renderPreview() {
+      clearTimeout(previewTimer);
+
+      previewTimer = setTimeout(() => {
+        const expression = normalizeExpression(functionInput.value);
+
+        if (!expression) {
+          preview.innerHTML = '\\[f(x)=\\text{Ingrese una función}\\]';
+          setSyntaxStatus('neutral', 'Esperando función');
+          renderVariableInputs([]);
+          safeTypeset([preview]);
+          return;
+        }
+
+        try {
+          const node = parseExpression(expression);
+          validateKnownFunctions(node);
+
+          const tex = naturalLogTex(node.toTex({ parenthesis: 'keep', implicit: 'show' }));
+          preview.innerHTML = `\\[f=${tex}\\]`;
+          setSyntaxStatus('valid', 'Sintaxis válida');
+
+          const variables = extractVariables(expression);
+          renderVariableInputs(variables);
+        } catch (error) {
+          preview.innerHTML = `\\[\\text{${escapeLatexText('Expresión incompleta o inválida')}}\\]`;
+          setSyntaxStatus('invalid', 'Revisar sintaxis');
+
+          // No se eliminan los campos mientras la expresión está temporalmente incompleta.
+        }
+
+        safeTypeset([preview]);
+      }, 100);
+    }
+
+    // -----------------------------
+    // Teclado científico
+    // -----------------------------
+    function dispatchFunctionInput() {
+      functionInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function insertAtCursor(text, cursorOffset = 0) {
+      const start = functionInput.selectionStart ?? functionInput.value.length;
+      const end = functionInput.selectionEnd ?? functionInput.value.length;
+      const current = functionInput.value;
+
+      functionInput.value =
+        current.slice(0, start) +
+        text +
+        current.slice(end);
+
+      const nextPosition = start + text.length + Number(cursorOffset || 0);
+
+      functionInput.focus();
+      functionInput.setSelectionRange(nextPosition, nextPosition);
+      dispatchFunctionInput();
+    }
+
+    function backspaceAtCursor() {
+      const start = functionInput.selectionStart ?? functionInput.value.length;
+      const end = functionInput.selectionEnd ?? functionInput.value.length;
+
+      if (start !== end) {
+        const current = functionInput.value;
+        functionInput.value = current.slice(0, start) + current.slice(end);
+        functionInput.setSelectionRange(start, start);
+      } else if (start > 0) {
+        const current = functionInput.value;
+        functionInput.value = current.slice(0, start - 1) + current.slice(start);
+        functionInput.setSelectionRange(start - 1, start - 1);
+      }
+
+      functionInput.focus();
+      dispatchFunctionInput();
+    }
+
+    function moveCursor(direction) {
+      const start = functionInput.selectionStart ?? 0;
+      const end = functionInput.selectionEnd ?? start;
+      const position = direction === 'left'
+        ? Math.max(0, start - 1)
+        : Math.min(functionInput.value.length, end + 1);
+
+      functionInput.focus();
+      functionInput.setSelectionRange(position, position);
+    }
+
+    document.querySelectorAll('.calc-key').forEach((button) => {
+      button.addEventListener('click', () => {
+        const insert = button.dataset.insert;
+        const template = button.dataset.template;
+        const action = button.dataset.action;
+
+        if (insert !== undefined) {
+          insertAtCursor(insert);
+          return;
+        }
+
+        if (template !== undefined) {
+          insertAtCursor(template, Number(button.dataset.offset || 0));
+          return;
+        }
+
+        if (action === 'clear') {
+          functionInput.value = '';
+          functionInput.focus();
+          dispatchFunctionInput();
+        } else if (action === 'backspace') {
+          backspaceAtCursor();
+        } else if (action === 'left') {
+          moveCursor('left');
+        } else if (action === 'right') {
+          moveCursor('right');
+        }
+      });
+    });
+
+    // -----------------------------
+    // Lectura y validación de datos
+    // -----------------------------
+    function parseStrictReal(rawValue) {
+      const trimmed = String(rawValue).trim();
+
+      // Admite punto o coma decimal, pero no expresiones matemáticas.
+      const normalized = trimmed.replace(',', '.');
+      const realPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+      if (!realPattern.test(normalized)) {
+        return null;
+      }
+
+      const value = Number(normalized);
+      return Number.isFinite(value) ? value : null;
+    }
+
+    function clearInputErrors() {
+      document.querySelectorAll('.field.invalid').forEach((input) => {
+        input.classList.remove('invalid');
+      });
+    }
+
+    function collectScopeAndDeltas(variables) {
+      clearInputErrors();
+
+      const scope = {};
+      const deltas = {};
+      let invalid = false;
+
+      variables.forEach((variable) => {
+        const valueInput = document.getElementById(`value_${variable}`);
+        const deltaInput = document.getElementById(`delta_${variable}`);
+
+        const value = parseStrictReal(valueInput?.value ?? '');
+        const delta = parseStrictReal(deltaInput?.value ?? '');
+
+        if (value === null) {
+          valueInput?.classList.add('invalid');
+          invalid = true;
+        }
+
+        if (delta === null || delta <= 0) {
+          deltaInput?.classList.add('invalid');
+          invalid = true;
+        }
+
+        if (value !== null) scope[variable] = value;
+        if (delta !== null) deltas[variable] = delta;
+      });
+
+      if (invalid) {
+        throw new Error('INVALID_NUMERIC_FIELDS');
+      }
+
+      return { scope, deltas };
+    }
+
+    // -----------------------------
+    // Motor matemático
+    // -----------------------------
+    function calculatePropagation() {
+      hideAlert();
+      clearInputErrors();
+
+      const userExpression = functionInput.value.trim();
+      const expression = normalizeExpression(userExpression);
+
+      if (!expression) {
+        showAlert(
+          'Falta la función',
+          'Expresión matemática inválida. Por favor, revise la sintaxis.'
+        );
+        functionInput.classList.add('invalid');
+        functionInput.focus();
+        return;
+      }
+
+      functionInput.classList.remove('invalid');
+
+      let parsedNode;
+      let variables;
+
+      try {
+        parsedNode = parseExpression(expression);
+        validateKnownFunctions(parsedNode);
+        variables = extractVariables(expression);
+      } catch (error) {
+        const unknownFunction = String(error.message || '').startsWith('UNKNOWN_FUNCTION:')
+          ? String(error.message).split(':')[1]
+          : null;
+
+        showAlert(
+          'Expresión matemática inválida',
+          unknownFunction
+            ? `La función "${unknownFunction}" no está reconocida. Revise la sintaxis.`
+            : 'Expresión matemática inválida. Por favor, revise la sintaxis.'
+        );
+
+        functionInput.classList.add('invalid');
+        functionInput.focus();
+        return;
+      }
+
+      if (variables.length === 0) {
+        showAlert(
+          'No se detectaron variables',
+          'La función debe contener al menos una variable para calcular la propagación del error.',
+          'warning'
+        );
+        return;
+      }
+
+      let scope;
+      let deltas;
+
+      try {
+        ({ scope, deltas } = collectScopeAndDeltas(variables));
+      } catch {
+        showAlert(
+          'Datos numéricos inválidos',
+          'Error: Ingrese solo números válidos en los campos de variables y cotas de error. Las cotas Δ deben ser mayores que cero.'
+        );
+        return;
+      }
+
+      try {
+        const compiledFunction = parsedNode.compile();
+        const functionValue = compiledFunction.evaluate(scope);
+
+        if (!isFiniteReal(functionValue)) {
+          throw new Error('NON_REAL_FUNCTION_VALUE');
+        }
+
+        const derivativeResults = [];
+        let absoluteError = 0;
+
+        variables.forEach((variable) => {
+          const derivativeNode = math.derivative(parsedNode, variable);
+          const derivativeValue = derivativeNode.compile().evaluate(scope);
+
+          if (!isFiniteReal(derivativeValue)) {
+            throw new Error(`NON_REAL_DERIVATIVE:${variable}`);
+          }
+
+          const contribution = Math.abs(derivativeValue) * deltas[variable];
+
+          derivativeResults.push({
+            variable,
+            derivativeNode,
+            derivativeValue,
+            delta: deltas[variable],
+            contribution
+          });
+
+          absoluteError += contribution;
+        });
+
+        const functionAbs = Math.abs(functionValue);
+        const relativeError = functionAbs === 0 ? null : absoluteError / functionAbs;
+        const percentageError = relativeError === null ? null : relativeError * 100;
+
+        lastResultData = {
+          expression: userExpression,
+          internalExpression: expression,
+          expressionTex: naturalLogTex(parsedNode.toTex({ parenthesis: 'keep', implicit: 'show' })),
+          variables,
+          scope,
+          deltas,
+          functionValue,
+          derivativeResults,
+          absoluteError,
+          relativeError,
+          percentageError,
+          calculatedAt: new Date().toISOString()
+        };
+
+        renderResult(lastResultData);
+        saveHistory(lastResultData);
+      } catch (error) {
+        console.error(error);
+
+        let message = 'No se pudo evaluar la función en el punto indicado. Revise el dominio matemático y los valores ingresados.';
+
+        if (String(error.message || '').startsWith('NON_REAL_DERIVATIVE')) {
+          message = 'Una derivada no produjo un número real y finito en el punto ingresado.';
+        } else if (error.message === 'NON_REAL_FUNCTION_VALUE') {
+          message = 'La función no produce un número real y finito en el punto ingresado.';
+        }
+
+        showAlert('No fue posible completar el cálculo', message);
+      }
+    }
+
+    function renderResult(data) {
+      const pointTex = data.variables
+        .map((variable) => `${variable}=${formatNumber(data.scope[variable])}`)
+        .join(',\\;');
+
+      const generalTermsTex = data.derivativeResults
+        .map((item) => `\\left|\\frac{\\partial f}{\\partial ${item.variable}}\\right|\\Delta ${item.variable}`)
+        .join(' + ');
+
+      const substitutionTex = data.derivativeResults
+        .map((item) => `\\left|${formatNumber(item.derivativeValue)}\\right|\\left(${formatNumber(item.delta)}\\right)`)
+        .join(' + ');
+
+      const contributionTex = data.derivativeResults
+        .map((item) => formatNumber(item.contribution))
+        .join(' + ');
+
+      const derivativesHtml = data.derivativeResults.map((item) => {
+        const derivativeTex = naturalLogTex(item.derivativeNode.toTex({ parenthesis: 'keep', implicit: 'show' }));
+
+        return `
+          <article class="soft-panel rounded-2xl p-4">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <h4 class="font-black">Respecto de ${escapeHtml(item.variable)}</h4>
+              <span class="rounded-lg bg-blue-100 px-2 py-1 font-mono text-xs font-bold text-blue-700">
+                ∂f/∂${escapeHtml(item.variable)}
+              </span>
+            </div>
+            <div class="math-scroll">
+              \\[
+                \\frac{\\partial f}{\\partial ${item.variable}}=${derivativeTex}
+              \\]
+              \\[
+                \\left.\\frac{\\partial f}{\\partial ${item.variable}}\\right|_{${pointTex}}
+                =${formatNumber(item.derivativeValue)}
+              \\]
+            </div>
+            <p class="muted mt-2 text-sm">
+              Aporte a Δf:
+              <strong>${formatNumber(Math.abs(item.derivativeValue))} × ${formatNumber(item.delta)} = ${formatNumber(item.contribution)}</strong>
+            </p>
+          </article>
+        `;
+      }).join('');
+
+      const relativeContent = data.relativeError === null
+        ? `
+          <p class="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+            Como f = 0, el error relativo Δf/|f| y el error porcentual no están definidos.
+          </p>
+        `
+        : `
+          <div class="math-scroll">
+            \\[
+              \\rho_f=\\frac{\\Delta f}{|f|}=
+              \\frac{${formatNumber(data.absoluteError)}}{|${formatNumber(data.functionValue)}|}
+              =${formatNumber(data.relativeError)}
+            \\]
+            \\[
+              \\delta\\%=100\\rho_f=${formatNumber(data.percentageError)}\\%
+            \\]
+          </div>
+        `;
+
+      resultPanel.innerHTML = `
+        <div id="pdfContent">
+          <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <span class="mb-2 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-green-700">
+                Cálculo completado
+              </span>
+              <h2 class="text-2xl font-black">Resultados</h2>
+            </div>
+
+            <div class="no-print flex gap-2">
+              <button
+                id="copyResultBtn"
+                type="button"
+                class="app-panel rounded-xl px-3 py-2 text-sm font-bold hover:border-blue-300"
+              >
+                Copiar
+              </button>
+              <button
+                id="pdfBtn"
+                type="button"
+                class="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-700"
+              >
+                PDF
+              </button>
+            </div>
+          </div>
+
+          <section class="soft-panel mb-4 rounded-2xl p-4">
+            <h3 class="mb-2 font-black">1. Función y punto</h3>
+            <div class="math-scroll">
+              \\[
+                f=${data.expressionTex}
+              \\]
+              \\[
+                (${pointTex})
+              \\]
+              \\[
+                f(${data.variables.join(',')})=${formatNumber(data.functionValue)}
+              \\]
+            </div>
+          </section>
+
+          <section class="mb-4">
+            <h3 class="mb-3 font-black">2. Derivadas parciales</h3>
+            <div class="space-y-3">
+              ${derivativesHtml}
+            </div>
+          </section>
+
+          <section class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-slate-900">
+            <h3 class="mb-2 font-black text-blue-800">3. Propagación del error absoluto</h3>
+            <div class="math-scroll">
+              \\[
+                \\Delta f=${generalTermsTex}
+              \\]
+              \\[
+                \\Delta f=${substitutionTex}
+              \\]
+              \\[
+                \\Delta f=${contributionTex}=${formatNumber(data.absoluteError)}
+              \\]
+            </div>
+          </section>
+
+          <section class="mb-4 rounded-2xl bg-slate-900 p-5 text-white">
+            <p class="mb-2 text-sm font-bold uppercase tracking-wide text-blue-200">Notación de ingeniería</p>
+            <div class="math-scroll text-xl">
+              \\[
+                \\boxed{f=${formatNumber(data.functionValue)}\\pm${formatNumber(data.absoluteError)}}
+              \\]
+            </div>
+          </section>
+
+          <section class="soft-panel rounded-2xl p-4">
+            <h3 class="mb-2 font-black">4. Error relativo y porcentual</h3>
+            ${relativeContent}
+          </section>
+        </div>
+      `;
+
+      resultPlaceholder.classList.add('hidden');
+      resultPanel.classList.remove('hidden');
+
+      safeTypeset([resultPanel]).then?.(() => {
+        // El encadenamiento opcional evita errores si MathJax aún no terminó de cargar.
+      });
+
+      setTimeout(() => {
+        $('copyResultBtn')?.addEventListener('click', copyResultToClipboard);
+        $('pdfBtn')?.addEventListener('click', exportResultToPdf);
+      }, 0);
+
+      resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // -----------------------------
+    // Copiar y PDF
+    // -----------------------------
+    async function copyResultToClipboard() {
+      if (!lastResultData) return;
+
+      const lines = [
+        `Función: ${lastResultData.expression}`,
+        `Punto: ${lastResultData.variables.map(v => `${v}=${formatNumber(lastResultData.scope[v])}`).join(', ')}`,
+        `f = ${formatNumber(lastResultData.functionValue)}`,
+        ...lastResultData.derivativeResults.map(item =>
+          `∂f/∂${item.variable} = ${item.derivativeNode.toString()} → ${formatNumber(item.derivativeValue)}`
+        ),
+        `Δf = ${formatNumber(lastResultData.absoluteError)}`,
+        `Resultado: ${formatNumber(lastResultData.functionValue)} ± ${formatNumber(lastResultData.absoluteError)}`,
+        `ρf = ${lastResultData.relativeError === null ? 'No definido' : formatNumber(lastResultData.relativeError)}`,
+        `δ% = ${lastResultData.percentageError === null ? 'No definido' : formatNumber(lastResultData.percentageError) + '%'}`
+      ];
+
+      try {
+        await navigator.clipboard.writeText(lines.join('\n'));
+        showAlert('Resultado copiado', 'El desarrollo fue copiado al portapapeles.', 'success');
+      } catch {
+        showAlert('No se pudo copiar', 'El navegador no permitió acceder al portapapeles.', 'warning');
+      }
+    }
+
+    function exportResultToPdf() {
+      if (!lastResultData || !resultPanel || typeof html2pdf === 'undefined') {
+        showAlert('PDF no disponible', 'Primero realice un cálculo válido.', 'warning');
+        return;
+      }
+
+      const content = $('pdfContent');
+      const clone = content.cloneNode(true);
+
+      clone.querySelectorAll('.no-print').forEach((node) => node.remove());
+      clone.style.background = '#ffffff';
+      clone.style.color = '#0f172a';
+      clone.style.padding = '18px';
+
+      const date = new Date();
+      const datePart = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-');
+
+      const options = {
+        margin: [8, 8, 8, 8],
+        filename: `propagacion_error_${datePart}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait'
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy']
+        }
+      };
+
+      showAlert('Generando PDF', 'El archivo se descargará automáticamente.', 'success');
+      html2pdf().set(options).from(clone).save();
+    }
+
+    // -----------------------------
+    // Historial
+    // -----------------------------
+    function readHistory() {
+      try {
+        const stored = JSON.parse(localStorage.getItem('propagation_history_v3') || '[]');
+        return Array.isArray(stored) ? stored : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function writeHistory(history) {
+      localStorage.setItem('propagation_history_v3', JSON.stringify(history.slice(0, 10)));
+    }
+
+    function saveHistory(data) {
+      const history = readHistory();
+
+      const entry = {
+        id: Date.now(),
+        expression: data.expression,
+        variables: data.variables,
+        scope: data.scope,
+        deltas: data.deltas,
+        functionValue: data.functionValue,
+        absoluteError: data.absoluteError,
+        createdAt: new Date().toISOString()
+      };
+
+      const withoutDuplicate = history.filter(item => item.expression !== entry.expression);
+      writeHistory([entry, ...withoutDuplicate]);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = readHistory();
+      historyContainer.innerHTML = '';
+
+      if (history.length === 0) {
+        historyEmpty.classList.remove('hidden');
+        return;
+      }
+
+      historyEmpty.classList.add('hidden');
+
+      history.forEach((entry) => {
+        const item = document.createElement('article');
+        item.className = 'soft-panel rounded-2xl p-3.5';
+
+        const point = Array.isArray(entry.variables)
+          ? entry.variables.map(v => `${v}=${formatNumber(entry.scope?.[v])}`).join(', ')
+          : '';
+
+        item.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="truncate font-mono text-sm font-bold" title="${escapeHtml(entry.expression)}">
+                ${escapeHtml(entry.expression)}
+              </p>
+              <p class="muted mt-1 truncate text-xs">${escapeHtml(point)}</p>
+              <p class="mt-1 text-xs">
+                <strong>${formatNumber(entry.functionValue)}</strong>
+                ± ${formatNumber(entry.absoluteError)}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 gap-1">
+              <button
+                type="button"
+                class="history-load rounded-lg px-2.5 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50"
+                data-id="${entry.id}"
+              >
+                Cargar
+              </button>
+              <button
+                type="button"
+                class="history-delete rounded-lg px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                data-id="${entry.id}"
+                aria-label="Eliminar del historial"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        `;
+
+        historyContainer.appendChild(item);
+      });
+
+      historyContainer.querySelectorAll('.history-load').forEach((button) => {
+        button.addEventListener('click', () => loadHistoryEntry(Number(button.dataset.id)));
+      });
+
+      historyContainer.querySelectorAll('.history-delete').forEach((button) => {
+        button.addEventListener('click', () => deleteHistoryEntry(Number(button.dataset.id)));
+      });
+    }
+
+    function loadHistoryEntry(id) {
+      const entry = readHistory().find(item => Number(item.id) === id);
+      if (!entry) return;
+
+      variableValuesCache.clear();
+
+      (entry.variables || []).forEach((variable) => {
+        variableValuesCache.set(variable, {
+          value: entry.scope?.[variable] ?? '',
+          delta: entry.deltas?.[variable] ?? ''
+        });
+      });
+
+      functionInput.value = entry.expression || '';
+      functionInput.focus();
+      dispatchFunctionInput();
+
+      setTimeout(() => {
+        (entry.variables || []).forEach((variable) => {
+          const valueInput = document.getElementById(`value_${variable}`);
+          const deltaInput = document.getElementById(`delta_${variable}`);
+
+          if (valueInput) valueInput.value = entry.scope?.[variable] ?? '';
+          if (deltaInput) deltaInput.value = entry.deltas?.[variable] ?? '';
+        });
+      }, 150);
+    }
+
+    function deleteHistoryEntry(id) {
+      const history = readHistory().filter(item => Number(item.id) !== id);
+      writeHistory(history);
+      renderHistory();
+    }
+
+    // -----------------------------
+    // Tema
+    // -----------------------------
+    function applyTheme(theme) {
+      const isDark = theme === 'dark';
+      document.documentElement.classList.toggle('dark', isDark);
+      $('themeIcon').textContent = isDark ? '☀️' : '🌙';
+      $('themeText').textContent = isDark ? 'Modo claro' : 'Modo oscuro';
+      localStorage.setItem('propagation_theme_v3', isDark ? 'dark' : 'light');
+    }
+
+    function initializeTheme() {
+      const saved = localStorage.getItem('propagation_theme_v3');
+      const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+      applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+    }
+
+    // -----------------------------
+    // Eventos generales
+    // -----------------------------
+    functionInput.addEventListener('input', () => {
+      functionInput.classList.remove('invalid');
+      hideAlert();
+      renderPreview();
+    });
+
+    functionInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        calculatePropagation();
+      }
+    });
+
+    variablesContainer.addEventListener('input', (event) => {
+      const input = event.target;
+
+      if (!(input instanceof HTMLInputElement)) return;
+
+      input.classList.remove('invalid');
+
+      const variable = input.dataset.variable;
+      if (!variable) return;
+
+      const cached = variableValuesCache.get(variable) || { value: '', delta: '' };
+
+      if (input.dataset.role === 'variable-value') {
+        cached.value = input.value;
+      } else if (input.dataset.role === 'variable-delta') {
+        cached.delta = input.value;
+      }
+
+      variableValuesCache.set(variable, cached);
+    });
+
+    $('calcBtn').addEventListener('click', calculatePropagation);
+
+    $('exampleBtn').addEventListener('click', () => {
+      variableValuesCache.clear();
+      variableValuesCache.set('x', { value: '2', delta: '0.01' });
+      variableValuesCache.set('y', { value: '1.5', delta: '0.02' });
+      variableValuesCache.set('z', { value: '4', delta: '0.01' });
+
+      functionInput.value = 'x^2*sin(y) + ln(z)';
+      dispatchFunctionInput();
+
+      setTimeout(() => {
+        ['x', 'y', 'z'].forEach((variable) => {
+          const cached = variableValuesCache.get(variable);
+          const valueInput = document.getElementById(`value_${variable}`);
+          const deltaInput = document.getElementById(`delta_${variable}`);
+
+          if (valueInput) valueInput.value = cached.value;
+          if (deltaInput) deltaInput.value = cached.delta;
+        });
+      }, 160);
+    });
+
+    $('clearFunctionBtn').addEventListener('click', () => {
+      functionInput.value = '';
+      variableValuesCache.clear();
+      functionInput.focus();
+      dispatchFunctionInput();
+    });
+
+    $('closeAlert').addEventListener('click', hideAlert);
+
+    $('clearHistoryBtn').addEventListener('click', () => {
+      localStorage.removeItem('propagation_history_v3');
+      renderHistory();
+      showAlert('Historial eliminado', 'Se borraron todos los cálculos guardados.', 'success');
+    });
+
+    $('themeBtn').addEventListener('click', () => {
+      const nextTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+      applyTheme(nextTheme);
+    });
+
+    // -----------------------------
+    // Inicialización
+    // -----------------------------
+    initializeTheme();
+    renderHistory();
+    renderPreview();
+
+    window.addEventListener('load', () => {
+      safeTypeset();
+    });
+  </script>
 </body>
 </html>
