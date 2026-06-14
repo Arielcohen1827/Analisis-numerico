@@ -1,361 +1,782 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Propagación de Error | Taylor 1er Orden</title>
+  <title>Propagación de Errores | Calculadora Científica de Taylor</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          boxShadow: {
-            soft: '0 20px 60px rgba(15, 23, 42, 0.08)',
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
           },
+          boxShadow: {
+            'glow-sky': '0 0 20px rgba(56, 189, 248, 0.15)',
+            'glow-indigo': '0 0 20px rgba(99, 102, 241, 0.15)',
+            'glow-rose': '0 0 20px rgba(244, 63, 94, 0.2)',
+          }
         },
       },
     };
   </script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- KaTeX CSS & JS (Much faster than MathJax for real-time typesetting) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+  <!-- Math.js -->
   <script src="https://cdn.jsdelivr.net/npm/mathjs@11.12.0/lib/browser/math.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-input {
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-input:focus {
+      border-color: rgba(56, 189, 248, 0.8);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+      outline: none;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
-  <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-    <header class="mb-8 rounded-3xl bg-slate-900/90 p-7 shadow-soft ring-1 ring-white/10">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p class="text-sm uppercase tracking-[0.3em] text-sky-400">Análisis Numérico</p>
-          <h1 class="mt-3 text-3xl font-semibold text-white sm:text-4xl">Propagación de Error en Funciones</h1>
-          <p class="mt-2 max-w-2xl text-slate-400">Calcula la cota de error absoluto, relativo y porcentual usando el desarrollo de Taylor de primer orden para funciones de <span class="font-medium text-slate-100">x, y, z</span>.</p>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between selection:bg-sky-500/30 selection:text-sky-200">
+
+  <!-- Glowing background elements -->
+  <div class="fixed top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="fixed top-1/3 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <!-- Main Container -->
+  <div class="w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 relative z-10 flex-grow">
+    
+    <!-- Header -->
+    <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 sm:p-8 rounded-3xl glass-card relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-sky-500/5 pointer-events-none"></div>
+      <div class="relative z-10">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="px-2.5 py-1 text-xs font-semibold uppercase tracking-widest text-sky-400 bg-sky-500/10 rounded-full border border-sky-500/20">
+            Análisis Numérico
+          </span>
         </div>
-        <div class="rounded-3xl bg-slate-800/80 px-5 py-4 text-slate-300 ring-1 ring-white/10 sm:w-96">
-          <p class="text-sm uppercase tracking-[0.24em] text-sky-300">Instrucciones</p>
-          <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-400">
-            <li>1. Escribe una función matemática en términos de <span class="font-semibold">x, y, z</span>.</li>
-            <li>2. Proporciona valores y cotas de error.</li>
-            <li>3. Presiona <span class="font-semibold text-sky-200">Calcular</span> para ver el resultado.</li>
-          </ul>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+          Propagación de Error de Taylor
+        </h1>
+        <p class="mt-2 text-slate-400 max-w-2xl text-sm sm:text-base leading-relaxed">
+          Calcula y analiza la cota de error absoluto, relativo y porcentual utilizando el desarrollo en serie de Taylor de primer orden para funciones multivariables.
+        </p>
+      </div>
+      <div class="flex items-center gap-4 bg-slate-950/40 p-4 rounded-2xl border border-white/5 md:max-w-xs relative z-10">
+        <div class="text-sky-400 p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 self-start">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="text-xs sm:text-sm text-slate-400">
+          <span class="font-semibold text-slate-200">Soporte Multivariable:</span> Ingresa variables <code class="text-sky-300 font-mono">x</code>, <code class="text-sky-300 font-mono">y</code>, y <code class="text-sky-300 font-mono">z</code>. El sistema detectará las variables activas en tiempo real.
         </div>
       </div>
     </header>
 
-    <div id="alert" class="mb-6 hidden rounded-3xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 shadow-soft ring-1 ring-rose-500/20">
-      <p class="font-semibold">Error:</p>
-      <p id="alertMessage" class="mt-1 text-sm leading-6"></p>
+    <!-- Error Alert Banner (Floating style) -->
+    <div id="alertBanner" class="hidden fixed bottom-6 right-6 max-w-md w-full glass-card border-rose-500/30 shadow-glow-rose rounded-2xl p-4 transition-all duration-300 transform translate-y-0 z-50 animate-bounce">
+      <div class="flex items-start gap-3">
+        <div class="text-rose-400 p-1 bg-rose-500/10 rounded-lg border border-rose-500/20 mt-0.5">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="flex-grow">
+          <h4 class="font-bold text-rose-200 text-sm">Error de Entrada</h4>
+          <p id="alertMessage" class="text-xs text-rose-300/95 mt-1 leading-relaxed"></p>
+        </div>
+        <button id="closeAlertBtn" class="text-slate-400 hover:text-slate-200 transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <main class="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-      <section class="space-y-8">
-        <div class="rounded-3xl bg-slate-900/85 p-6 shadow-soft ring-1 ring-white/10">
-          <div class="flex items-center justify-between gap-4">
+    <!-- Main Workspace Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left side: Controls & inputs (7 cols on lg) -->
+      <div class="lg:col-span-7 space-y-8">
+        
+        <!-- Function input card -->
+        <div class="p-6 sm:p-8 rounded-3xl glass-card relative overflow-hidden">
+          <div class="flex items-center justify-between mb-4">
             <div>
-              <p class="text-sm uppercase tracking-[0.24em] text-sky-300">Expresión</p>
-              <h2 class="mt-2 text-xl font-semibold text-white">Función matemática</h2>
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Paso 1</span>
+              <h2 class="text-lg font-bold text-white mt-0.5">Definir la Función</h2>
             </div>
-            <span class="rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.22em] text-slate-400">Realtime</span>
+            <span class="px-2 py-0.5 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 rounded-full border border-emerald-500/20 tracking-wider uppercase animate-pulse">
+              Tiempo Real
+            </span>
           </div>
-          <div class="mt-6 space-y-4">
-            <label class="block text-sm font-medium text-slate-300">f(x, y, z)</label>
-            <textarea id="functionInput" rows="4" class="w-full resize-none rounded-3xl border border-slate-700/70 bg-slate-950 p-4 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" placeholder="Ej. x^2 + 3*y - sin(z)"></textarea>
-          </div>
-          <div class="mt-4 grid gap-3 sm:grid-cols-3">
-            <button type="button" data-insert="x" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">x</button>
-            <button type="button" data-insert="y" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">y</button>
-            <button type="button" data-insert="z" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">z</button>
-            <button type="button" data-insert="^" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">potencia ^</button>
-            <button type="button" data-insert="sqrt()" data-cursor="-1" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">raíz √</button>
-            <button type="button" data-insert="/" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">÷</button>
-            <button type="button" data-insert="*" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">*</button>
-            <button type="button" data-insert="(" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">(</button>
-            <button type="button" data-insert=")" class="rounded-2xl border border-slate-700/70 bg-slate-800 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-sky-400/80 hover:bg-slate-700">)</button>
-          </div>
-          <div class="mt-6 rounded-3xl border border-slate-700/70 bg-slate-950/60 p-5">
-            <p class="text-sm uppercase tracking-[0.24em] text-slate-400">Vista previa</p>
-            <div id="preview" class="mt-4 min-h-[4rem] text-base leading-relaxed text-slate-100"></div>
+
+          <div class="space-y-4">
+            <div class="relative">
+              <label for="functionInput" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">f(x, y, z)</label>
+              <textarea 
+                id="functionInput" 
+                rows="3" 
+                class="w-full glass-input rounded-2xl p-4 text-lg font-mono text-white placeholder-slate-600 focus:shadow-glow-sky resize-none"
+                placeholder="Ej: x^2 * sin(y) - exp(z) / (x + y)"
+              >x^2 * y - cos(z)</textarea>
+            </div>
+
+            <!-- Virtual Keyboard / Buttons for math characters -->
+            <div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+              <button type="button" data-insert="x" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-sky-500/40 hover:bg-sky-500/10 transition text-slate-300">x</button>
+              <button type="button" data-insert="y" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-sky-500/40 hover:bg-sky-500/10 transition text-slate-300">y</button>
+              <button type="button" data-insert="z" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-sky-500/40 hover:bg-sky-500/10 transition text-slate-300">z</button>
+              <button type="button" data-insert="^" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-sky-500/40 hover:bg-sky-500/10 transition text-slate-300">^</button>
+              <button type="button" data-insert="sqrt()" data-cursor="-1" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-sky-500/40 hover:bg-sky-500/10 transition text-slate-300">√</button>
+              <button type="button" data-insert="sin()" data-cursor="-1" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition text-slate-300">sin</button>
+              <button type="button" data-insert="cos()" data-cursor="-1" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition text-slate-300">cos</button>
+              <button type="button" data-insert="exp()" data-cursor="-1" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition text-slate-300">exp</button>
+              <button type="button" data-insert="pi" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition text-slate-300">π</button>
+              <button type="button" data-insert="e" class="py-2 text-xs font-bold font-mono rounded-xl bg-slate-900/60 border border-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition text-slate-300">e</button>
+            </div>
+
+            <!-- Mathematical Live Preview -->
+            <div class="mt-4 p-4 rounded-2xl bg-slate-950/50 border border-white/5">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Previsualización Matemática LaTeX</span>
+              <div id="mathPreview" class="min-h-[3rem] flex items-center justify-center text-lg sm:text-xl text-sky-100 overflow-x-auto custom-scrollbar py-2"></div>
+            </div>
           </div>
         </div>
 
-        <div class="rounded-3xl bg-slate-900/85 p-6 shadow-soft ring-1 ring-white/10">
-          <div class="flex items-center justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.24em] text-sky-300">Variables</p>
-              <h2 class="mt-2 text-xl font-semibold text-white">Valores y cotas</h2>
-            </div>
+        <!-- Variable settings card -->
+        <div class="p-6 sm:p-8 rounded-3xl glass-card">
+          <div class="mb-6">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Paso 2</span>
+            <h2 class="text-lg font-bold text-white mt-0.5">Valores y Cotas de Error</h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Las variables que se detecten activas en la función serán marcadas y requeridas.
+            </p>
           </div>
-          <div class="mt-6 grid gap-5 sm:grid-cols-2">
-            <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/5">
-              <p class="text-sm text-slate-400">Valor de x</p>
-              <input id="xValue" type="text" inputmode="decimal" placeholder="Ej. 1.2" class="mt-3 w-full rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" />
-            </div>
-            <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/5">
-              <p class="text-sm text-slate-400">Δx</p>
-              <input id="dxValue" type="text" inputmode="decimal" placeholder="Ej. 0.01" class="mt-3 w-full rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" />
-            </div>
-            <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/5">
-              <p class="text-sm text-slate-400">Valor de y</p>
-              <input id="yValue" type="text" inputmode="decimal" placeholder="Ej. 0.7" class="mt-3 w-full rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" />
-            </div>
-            <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/5">
-              <p class="text-sm text-slate-400">Δy</p>
-              <input id="dyValue" type="text" inputmode="decimal" placeholder="Ej. 0.02" class="mt-3 w-full rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" />
-            </div>
-          </div>
-          <div class="mt-5 grid gap-5 sm:grid-cols-2">
-            <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/5">
-              <p class="text-sm text-slate-400">Valor de z</p>
-              <input id="zValue" type="text" inputmode="decimal" placeholder="Ej. 0.5" class="mt-3 w-full rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" />
-            </div>
-            <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/5">
-              <p class="text-sm text-slate-400">Δz</p>
-              <input id="dzValue" type="text" inputmode="decimal" placeholder="Ej. 0.03" class="mt-3 w-full rounded-2xl border border-slate-700/80 bg-slate-900 px-4 py-3 text-lg text-white outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20" />
-            </div>
-          </div>
-          <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button id="calculateBtn" class="inline-flex items-center justify-center rounded-3xl bg-sky-500 px-6 py-3 text-base font-semibold text-slate-950 transition hover:bg-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-300/50">Calcular</button>
-            <button id="resetBtn" class="inline-flex items-center justify-center rounded-3xl border border-slate-700/80 bg-slate-800 px-6 py-3 text-base font-medium text-slate-300 transition hover:border-slate-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-500/30">Limpiar</button>
-          </div>
-        </div>
-      </section>
 
-      <aside class="space-y-6">
-        <div class="rounded-3xl bg-slate-900/85 p-6 shadow-soft ring-1 ring-white/10">
-          <div class="flex items-center justify-between gap-4">
-            <div>
-              <p class="text-sm uppercase tracking-[0.24em] text-sky-300">Resultados</p>
-              <h2 class="mt-2 text-xl font-semibold text-white">Panel de salida</h2>
+          <div class="space-y-6">
+            <!-- Variable X Row -->
+            <div id="row-x" class="p-4 rounded-2xl border border-white/5 bg-slate-950/20 transition-all duration-300">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-sm">X</span>
+                  <span class="font-bold text-slate-200 text-sm">Variable X</span>
+                </div>
+                <span id="badge-x" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 border border-white/5 text-slate-500 tracking-wider">
+                  Desconectada
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Aproximado (x₀)</label>
+                  <input type="text" id="val-x" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono text-white" placeholder="Ej: 2.0" value="2.0" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cota de Error (Δx > 0)</label>
+                  <input type="text" id="err-x" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono text-white" placeholder="Ej: 0.05" value="0.01" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Variable Y Row -->
+            <div id="row-y" class="p-4 rounded-2xl border border-white/5 bg-slate-950/20 transition-all duration-300">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">Y</span>
+                  <span class="font-bold text-slate-200 text-sm">Variable Y</span>
+                </div>
+                <span id="badge-y" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 border border-white/5 text-slate-500 tracking-wider">
+                  Desconectada
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Aproximado (y₀)</label>
+                  <input type="text" id="val-y" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono text-white" placeholder="Ej: 1.5" value="1.5" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cota de Error (Δy > 0)</label>
+                  <input type="text" id="err-y" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono text-white" placeholder="Ej: 0.02" value="0.02" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Variable Z Row -->
+            <div id="row-z" class="p-4 rounded-2xl border border-white/5 bg-slate-950/20 transition-all duration-300">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm">Z</span>
+                  <span class="font-bold text-slate-200 text-sm">Variable Z</span>
+                </div>
+                <span id="badge-z" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 border border-white/5 text-slate-500 tracking-wider">
+                  Desconectada
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor Aproximado (z₀)</label>
+                  <input type="text" id="val-z" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono text-white" placeholder="Ej: 0.0" value="0.0" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cota de Error (Δz > 0)</label>
+                  <input type="text" id="err-z" class="w-full glass-input rounded-xl px-4 py-2.5 text-sm font-mono text-white" placeholder="Ej: 0.01" value="0.005" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-2">
+              <button 
+                id="calculateBtn" 
+                class="flex-grow py-3 px-6 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-bold transition shadow-lg hover:shadow-sky-500/25 flex items-center justify-center gap-2"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                Calcular Propagación
+              </button>
+              <button 
+                id="resetBtn" 
+                class="py-3 px-6 rounded-2xl bg-slate-900 border border-white/10 hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center justify-center gap-2"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Limpiar todo
+              </button>
             </div>
           </div>
-          <div id="results" class="mt-6 space-y-5 text-slate-200">
-            <p class="text-sm text-slate-500">Los resultados aparecerán aquí después de calcular.</p>
-          </div>
         </div>
-      </aside>
-    </main>
+
+      </div>
+
+      <!-- Right side: Mathematical results panel (5 cols on lg) -->
+      <div class="lg:col-span-5">
+        <div id="resultsCard" class="p-6 sm:p-8 rounded-3xl glass-card min-h-[400px] flex flex-col justify-between sticky top-8">
+          
+          <div class="flex-grow">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Paso 3</span>
+                <h2 class="text-lg font-bold text-white mt-0.5">Resultados del Análisis</h2>
+              </div>
+              <span class="p-1.5 bg-slate-950/40 rounded-xl border border-white/5 text-sky-400">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
+                </svg>
+              </span>
+            </div>
+
+            <!-- Precalculation state -->
+            <div id="preCalcState" class="flex flex-col items-center justify-center text-center py-20">
+              <div class="w-16 h-16 rounded-3xl bg-slate-950/50 border border-white/5 flex items-center justify-center text-slate-500 mb-4 shadow-inner">
+                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p class="text-sm font-medium text-slate-400">Listo para Calcular</p>
+              <p class="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+                Ingresa tu expresión y los valores correspondientes en el panel de la izquierda para obtener el desarrollo analítico.
+              </p>
+            </div>
+
+            <!-- Postcalculation state -->
+            <div id="postCalcState" class="hidden space-y-6">
+              
+              <!-- Function evaluation output -->
+              <div class="p-4 rounded-2xl bg-slate-950/40 border border-white/5">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Evaluación de la Función</span>
+                <div id="res-f-val" class="text-xl sm:text-2xl font-bold text-white flex justify-center py-2 overflow-x-auto custom-scrollbar"></div>
+              </div>
+
+              <!-- Partial Derivatives output -->
+              <div class="p-4 rounded-2xl bg-slate-950/40 border border-white/5 space-y-3">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Derivadas Parciales Analíticas</span>
+                <div id="res-derivatives" class="space-y-2.5"></div>
+              </div>
+
+              <!-- Errors breakdown output -->
+              <div class="p-4 rounded-2xl bg-slate-950/40 border border-white/5 space-y-4">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Propagación de Error (Taylor 1° Orden)</span>
+                
+                <!-- Absolute Error -->
+                <div class="border-b border-white/5 pb-3">
+                  <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>Cota de Error Absoluto (Δf)</span>
+                    <span class="font-mono text-slate-200">f₀ ± Δf</span>
+                  </div>
+                  <div id="res-abs-error-math" class="text-sm sm:text-base font-semibold text-sky-300 overflow-x-auto py-1 flex justify-center"></div>
+                </div>
+
+                <!-- Relative Error -->
+                <div class="border-b border-white/5 pb-3">
+                  <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>Cota de Error Relativo (ρºf)</span>
+                    <span class="font-mono text-slate-200">Δf / |f₀|</span>
+                  </div>
+                  <div id="res-rel-error-math" class="text-sm sm:text-base font-semibold text-indigo-300 overflow-x-auto py-1 flex justify-center"></div>
+                </div>
+
+                <!-- Percent Error with colored badge -->
+                <div>
+                  <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                    <span>Error Porcentual (δ%)</span>
+                    <span id="res-percent-badge" class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider"></span>
+                  </div>
+                  <div id="res-percent-math" class="text-lg sm:text-xl font-bold text-white overflow-x-auto py-1 flex justify-center"></div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Footer/Notation inside the output card -->
+          <div id="notationCard" class="hidden mt-6 pt-4 border-t border-white/5">
+            <div class="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-2xl">
+              <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">Notación en Ingeniería</span>
+              <p id="res-engineering-notation" class="text-sm sm:text-base font-semibold text-indigo-200 text-center font-mono py-1"></p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
+  <!-- Real Footer -->
+  <footer class="w-full text-center py-6 border-t border-white/5 text-slate-600 text-xs mt-12 bg-slate-950/40 backdrop-blur-sm relative z-10">
+    <p>Diseño premium para la cátedra de Análisis Numérico &copy; 2026. Motor algebraico por math.js y render KaTeX.</p>
+  </footer>
+
+  <!-- App Script -->
   <script>
-    const functionInput = document.getElementById('functionInput');
-    const preview = document.getElementById('preview');
-    const alertBanner = document.getElementById('alert');
-    const alertMessage = document.getElementById('alertMessage');
-    const results = document.getElementById('results');
-    const calculateBtn = document.getElementById('calculateBtn');
-    const resetBtn = document.getElementById('resetBtn');
+    document.addEventListener('DOMContentLoaded', () => {
+      // DOM elements
+      const functionInput = document.getElementById('functionInput');
+      const mathPreview = document.getElementById('mathPreview');
+      const alertBanner = document.getElementById('alertBanner');
+      const alertMessage = document.getElementById('alertMessage');
+      const closeAlertBtn = document.getElementById('closeAlertBtn');
+      const calculateBtn = document.getElementById('calculateBtn');
+      const resetBtn = document.getElementById('resetBtn');
 
-    const inputs = {
-      x: document.getElementById('xValue'),
-      y: document.getElementById('yValue'),
-      z: document.getElementById('zValue'),
-      dx: document.getElementById('dxValue'),
-      dy: document.getElementById('dyValue'),
-      dz: document.getElementById('dzValue'),
-    };
-
-    function showAlert(message) {
-      alertMessage.textContent = message;
-      alertBanner.classList.remove('hidden');
-    }
-
-    function hideAlert() {
-      alertBanner.classList.add('hidden');
-      alertMessage.textContent = '';
-    }
-
-    function renderPreview() {
-      const expression = functionInput.value.trim();
-      if (!expression) {
-        preview.innerHTML = '<span class="text-slate-500">Escribe una función para ver la vista previa matemática aquí.</span>';
-        return;
-      }
-
-      const safeText = expression
-        .replace(/\\/g, '\\\\')
-        .replace(/\$/g, '\\$')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-      preview.innerHTML = `\\(f(x,y,z)= ${safeText}\\)`;
-      if (window.MathJax && window.MathJax.typesetPromise) {
-        MathJax.typesetPromise([preview]).catch(() => {
-          preview.innerHTML = '<span class="text-slate-500">Función ingresada: vista previa no disponible.</span>';
-        });
-      }
-    }
-
-    function insertTextAtCursor(text, offset = 0) {
-      const start = functionInput.selectionStart;
-      const end = functionInput.selectionEnd;
-      const value = functionInput.value;
-      functionInput.value = value.slice(0, start) + text + value.slice(end);
-      functionInput.focus();
-      const position = Math.max(0, start + text.length + offset);
-      functionInput.setSelectionRange(position, position);
-      renderPreview();
-    }
-
-    const insertButtons = document.querySelectorAll('[data-insert]');
-    insertButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const text = button.getAttribute('data-insert');
-        const offset = Number(button.getAttribute('data-cursor') || '0');
-        insertTextAtCursor(text, offset);
-      });
-    });
-
-    function parseNumber(value) {
-      const parsed = Number(value);
-      return Number.isFinite(parsed) ? parsed : null;
-    }
-
-    function validateInputs() {
-      const expression = functionInput.value.trim();
-      if (!expression) {
-        showAlert('Expresión matemática inválida. Por favor, revise la sintaxis.');
-        return null;
-      }
-
-      const data = {};
-      for (const key of Object.keys(inputs)) {
-        const raw = inputs[key].value.trim();
-        const parsed = parseNumber(raw);
-        if (parsed === null) {
-          showAlert('Error: Ingrese solo números válidos en los campos de variables y cotas de error');
-          return null;
+      const variableInputs = {
+        x: {
+          val: document.getElementById('val-x'),
+          err: document.getElementById('err-x'),
+          row: document.getElementById('row-x'),
+          badge: document.getElementById('badge-x')
+        },
+        y: {
+          val: document.getElementById('val-y'),
+          err: document.getElementById('err-y'),
+          row: document.getElementById('row-y'),
+          badge: document.getElementById('badge-y')
+        },
+        z: {
+          val: document.getElementById('val-z'),
+          err: document.getElementById('err-z'),
+          row: document.getElementById('row-z'),
+          badge: document.getElementById('badge-z')
         }
-        data[key] = parsed;
+      };
+
+      const preCalcState = document.getElementById('preCalcState');
+      const postCalcState = document.getElementById('postCalcState');
+      const notationCard = document.getElementById('notationCard');
+
+      // Results display fields
+      const resFVal = document.getElementById('res-f-val');
+      const resDerivatives = document.getElementById('res-derivatives');
+      const resAbsErrorMath = document.getElementById('res-abs-error-math');
+      const resRelErrorMath = document.getElementById('res-rel-error-math');
+      const resPercentMath = document.getElementById('res-percent-math');
+      const resPercentBadge = document.getElementById('res-percent-badge');
+      const resEngineeringNotation = document.getElementById('res-engineering-notation');
+
+      // Global state of active variables in the function
+      let activeVariables = new Set();
+
+      // Show/Hide notifications
+      function showAlert(msg) {
+        alertMessage.textContent = msg;
+        alertBanner.classList.remove('hidden');
+        alertBanner.classList.add('flex');
+        // Scroll to error if not in viewport
+        alertBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      if (data.dx <= 0 || data.dy <= 0 || data.dz <= 0) {
-        showAlert('Error: Las cotas de error (Δx, Δy, Δz) deben ser números estrictamente mayores que cero');
-        return null;
+      function hideAlert() {
+        alertBanner.classList.add('hidden');
+        alertBanner.classList.remove('flex');
       }
 
-      return { expression, ...data };
-    }
+      closeAlertBtn.addEventListener('click', hideAlert);
 
-    function formatNumber(value) {
-      if (typeof value !== 'number' || !Number.isFinite(value)) return value;
-      return value.toLocaleString('es-ES', { maximumFractionDigits: 10 });
-    }
-
-    function calculate() {
-      hideAlert();
-      results.innerHTML = '<p class="text-slate-500">Calculando...</p>';
-      const validated = validateInputs();
-      if (!validated) {
-        results.innerHTML = '<p class="text-slate-500">Corrige los errores para ver los resultados.</p>';
-        return;
-      }
-
-      try {
-        const expr = math.parse(validated.expression);
-        const x = validated.x;
-        const y = validated.y;
-        const z = validated.z;
-        const scope = { x, y, z };
-
-        const fValue = expr.evaluate(scope);
-        const variables = ['x', 'y', 'z'];
-        const partials = variables.map((variable) => {
-          const derivative = math.derivative(expr, variable);
-          const value = derivative.evaluate(scope);
-          return {
-            variable,
-            expression: derivative.toString(),
-            latex: derivative.toTex({ parenthesis: 'keep' }),
-            value,
-          };
+      // Extract symbols present in parsed math expressions
+      function getUsedSymbols(node) {
+        const symbols = new Set();
+        node.traverse((n) => {
+          if (n.isSymbolNode && ['x', 'y', 'z'].includes(n.name)) {
+            symbols.add(n.name);
+          }
         });
+        return symbols;
+      }
 
-        const absError = Math.abs(partials[0].value) * validated.dx + Math.abs(partials[1].value) * validated.dy + Math.abs(partials[2].value) * validated.dz;
-        const absF = Math.abs(fValue);
-        const relativeError = absF === 0 ? Infinity : absError / absF;
-        const percentError = Number.isFinite(relativeError) ? relativeError * 100 : Infinity;
+      // Live update math render and variable status
+      function handleFunctionInput() {
+        const val = functionInput.value.trim();
+        hideAlert();
 
-        const functionLatex = expr.toTex({ parenthesis: 'keep' });
+        if (!val) {
+          mathPreview.innerHTML = '<span class="text-slate-500 italic text-sm">Escribe una función para ver el formateo matemático...</span>';
+          updateVariableInputsStatus(new Set());
+          return;
+        }
 
-        results.innerHTML = `
-          <div class="space-y-6">
-            <div class="rounded-3xl border border-slate-700/70 bg-slate-950/80 p-5">
-              <p class="text-sm uppercase tracking-[0.24em] text-slate-400">Función evaluada</p>
-              <div class="mt-4 text-lg text-slate-100">\\(f(x,y,z)= ${functionLatex}\\)</div>
-              <p class="mt-4 text-slate-300">\\(f(${formatNumber(x)}, ${formatNumber(y)}, ${formatNumber(z)}) = ${formatNumber(fValue)}\\)</p>
-            </div>
-
-            <div class="rounded-3xl border border-slate-700/70 bg-slate-950/80 p-5">
-              <p class="text-sm uppercase tracking-[0.24em] text-slate-400">Derivadas parciales</p>
-              <div class="mt-4 space-y-4">
-                ${partials
-                  .map((partial) => `
-                    <div class="rounded-3xl bg-slate-900/80 p-4">
-                      <p class="text-sm text-slate-300">\\(\frac{\partial f}{\partial ${partial.variable}} = ${partial.latex}\\)</p>
-                      <p class="mt-2 text-slate-200">Evaluada en el punto: \\( ${formatNumber(partial.value)} \\)</p>
-                    </div>
-                  `)
-                  .join('')}
-              </div>
-            </div>
-
-            <div class="rounded-3xl border border-slate-700/70 bg-slate-950/80 p-5">
-              <p class="text-sm uppercase tracking-[0.24em] text-slate-400">Propagación de error</p>
-              <div class="mt-4 space-y-4 text-slate-200">
-                <div class="rounded-3xl bg-slate-900/80 p-4">
-                  <p class="text-sm text-slate-400">Cota de error absoluto</p>
-                  <p class="mt-2 text-slate-100">\\(\Delta f = |\frac{\partial f}{\partial x}|\Delta x + |\frac{\partial f}{\partial y}|\Delta y + |\frac{\partial f}{\partial z}|\Delta z = ${formatNumber(absError)}\\)</p>
-                  <p class="mt-2 text-slate-300">Notación de ingeniería: \\(${formatNumber(fValue)} \pm ${formatNumber(absError)}\\)</p>
-                </div>
-                <div class="rounded-3xl bg-slate-900/80 p-4">
-                  <p class="text-sm text-slate-400">Cota de error relativo</p>
-                  <p class="mt-2 text-slate-100">\\(\rho^{\circ} f = \frac{\Delta f}{|f|} = ${Number.isFinite(relativeError) ? formatNumber(relativeError) : '\infty'}\\)</p>
-                </div>
-                <div class="rounded-3xl bg-slate-900/80 p-4">
-                  <p class="text-sm text-slate-400">Error porcentual</p>
-                  <p class="mt-2 text-slate-100">\\(\delta\% = 100 \cdot \rho^{\circ} f = ${Number.isFinite(percentError) ? formatNumber(percentError) : '\infty'}\%\\)</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-
-        if (window.MathJax && window.MathJax.typesetPromise) {
-          MathJax.typesetPromise([results]).catch(() => {
-            console.warn('MathJax: no se pudo renderizar el resultado.');
+        try {
+          // Parse expression using mathjs
+          const node = math.parse(val);
+          
+          // Generate beautiful LaTeX
+          const latex = node.toTex({ parenthesis: 'keep' });
+          
+          // Render using KaTeX
+          katex.render(`f(x, y, z) = ${latex}`, mathPreview, {
+            throwOnError: false,
+            displayMode: true
           });
+
+          // Detect active symbols
+          const detected = getUsedSymbols(node);
+          activeVariables = detected;
+          updateVariableInputsStatus(detected);
+        } catch (e) {
+          // Invalid syntax in progress, show standard style preview without mathjs parser crashing
+          mathPreview.innerHTML = `<span class="text-amber-500/80 font-mono text-xs">Editando sintaxis: ${val}</span>`;
+          // Keep current active variables until parse succeeds again
         }
-      } catch (error) {
-        console.error(error);
-        showAlert('Expresión matemática inválida. Por favor, revise la sintaxis.');
-        results.innerHTML = '<p class="text-slate-500">Corrige la función para ver los resultados.</p>';
       }
-    }
 
-    function resetForm() {
-      functionInput.value = '';
-      inputs.x.value = '';
-      inputs.y.value = '';
-      inputs.z.value = '';
-      inputs.dx.value = '';
-      inputs.dy.value = '';
-      inputs.dz.value = '';
-      hideAlert();
-      renderPreview();
-      results.innerHTML = '<p class="text-slate-500">Los resultados aparecerán aquí después de calcular.</p>';
-    }
+      // Update input fields visually depending on variable presence
+      function updateVariableInputsStatus(detectedSymbols) {
+        ['x', 'y', 'z'].forEach(symbol => {
+          const v = variableInputs[symbol];
+          if (detectedSymbols.has(symbol)) {
+            // Variable is active
+            v.row.classList.remove('opacity-40', 'bg-slate-950/20');
+            v.row.classList.add('opacity-100', 'bg-sky-950/10', 'border-sky-500/20');
+            v.badge.textContent = 'Activa';
+            v.badge.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 tracking-wider';
+            v.val.disabled = false;
+            v.err.disabled = false;
+          } else {
+            // Variable is inactive
+            v.row.classList.remove('opacity-100', 'bg-sky-950/10', 'border-sky-500/20');
+            v.row.classList.add('opacity-40', 'bg-slate-950/20');
+            v.badge.textContent = 'Inactiva';
+            v.badge.className = 'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-900 border border-white/5 text-slate-500 tracking-wider';
+            v.val.disabled = true;
+            v.err.disabled = true;
+          }
+        });
+      }
 
-    functionInput.addEventListener('input', () => {
-      hideAlert();
-      renderPreview();
+      // Helper function to validate numerical input
+      function isValidReal(str) {
+        const trimmed = str.trim();
+        if (trimmed === "") return false;
+        const num = Number(trimmed);
+        return !isNaN(num) && isFinite(num);
+      }
+
+      // Calculation routine
+      function runCalculation() {
+        hideAlert();
+        const rawFunc = functionInput.value.trim();
+
+        if (!rawFunc) {
+          showAlert('Expresión matemática inválida. Por favor, revise la sintaxis.');
+          return;
+        }
+
+        // 1. Validate function syntax
+        let parsedExpression;
+        try {
+          parsedExpression = math.parse(rawFunc);
+        } catch (e) {
+          showAlert('Expresión matemática inválida. Por favor, revise la sintaxis.');
+          return;
+        }
+
+        // 2. Validate input variables and error bounds
+        const parsedVals = { x: 0, y: 0, z: 0 };
+        const parsedErrors = { x: 0, y: 0, z: 0 };
+
+        // We check all variables. If they are active, they must be validated strictly.
+        // We also validate active ones must have errors > 0.
+        // What about inactive ones? They are not required, but if they contain invalid input we ignore them or validate them?
+        // The instructions say:
+        // "Los campos para los valores aproximados (X, Y, Z) y las cotas de error (Δx, Δy, Δz) SOLO deben aceptar números reales."
+        // "Si el usuario ingresa letras, símbolos inválidos o deja campos obligatorios vacíos al intentar calcular, la aplicación NO debe romperse. Debe capturar el evento y mostrar un cartel/alerta visible..."
+        // So we strictly validate the inputs of active variables.
+        let validationError = false;
+
+        ['x', 'y', 'z'].forEach(symbol => {
+          if (activeVariables.has(symbol)) {
+            const valStr = variableInputs[symbol].val.value;
+            const errStr = variableInputs[symbol].err.value;
+
+            if (!isValidReal(valStr) || !isValidReal(errStr)) {
+              validationError = true;
+            } else {
+              parsedVals[symbol] = parseFloat(valStr);
+              parsedErrors[symbol] = parseFloat(errStr);
+
+              // Cota de error must be strictly > 0
+              if (parsedErrors[symbol] <= 0) {
+                validationError = true;
+              }
+            }
+          }
+        });
+
+        if (validationError) {
+          showAlert('Error: Ingrese solo números válidos en los campos de variables y cotas de error.');
+          return;
+        }
+
+        // 3. Mathematical Evaluation & Propagation logic
+        try {
+          const evalScope = {
+            x: parsedVals.x,
+            y: parsedVals.y,
+            z: parsedVals.z
+          };
+
+          // Evaluate f(X, Y, Z)
+          const f0 = parsedExpression.evaluate(evalScope);
+          if (typeof f0 === 'object' && f0.isComplex) {
+            showAlert('El resultado de la función dio un número complejo no soportado.');
+            return;
+          }
+
+          // Variables lists and calculations
+          let absErrorContribution = 0;
+          const derivativeElementsHtml = [];
+
+          ['x', 'y', 'z'].forEach(symbol => {
+            if (activeVariables.has(symbol)) {
+              // Calculate analytical partial derivative: math.derivative()
+              const derivativeNode = math.derivative(parsedExpression, symbol);
+              const derivativeValue = derivativeNode.evaluate(evalScope);
+              
+              // Latex of the derivative
+              const derivLatex = derivativeNode.toTex({ parenthesis: 'keep' });
+              
+              // Add to error contribution: |df/dvar| * delta_var
+              const errorVal = Math.abs(derivativeValue) * parsedErrors[symbol];
+              absErrorContribution += errorVal;
+
+              // Build HTML element for derivative display
+              const divId = `deriv-calc-${symbol}`;
+              derivativeElementsHtml.push(`
+                <div class="p-3 rounded-xl bg-slate-950/60 border border-white/5 space-y-1.5">
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-400 font-mono">∂f / ∂${symbol}</span>
+                    <span class="text-[10px] text-slate-500">Analítica</span>
+                  </div>
+                  <div class="text-sm font-mono text-indigo-200 overflow-x-auto py-1">
+                    \\(\\frac{\\partial f}{\\partial ${symbol}} = ${derivLatex}\\)
+                  </div>
+                  <div class="text-xs text-slate-400">
+                    Evaluada: <span class="font-mono text-slate-200">${formatNumber(derivativeValue)}</span> &nbsp;|&nbsp; 
+                    Aporte: <span class="font-mono text-sky-400">${formatNumber(errorVal)}</span>
+                  </div>
+                </div>
+              `);
+            } else {
+              // Not active, derivative is 0
+            }
+          });
+
+          // Compute relative and percent error
+          const absF0 = Math.abs(f0);
+          let relativeError = 0;
+          let percentError = 0;
+
+          if (absF0 !== 0) {
+            relativeError = absErrorContribution / absF0;
+            percentError = relativeError * 100;
+          } else {
+            relativeError = absErrorContribution === 0 ? 0 : Infinity;
+            percentError = absErrorContribution === 0 ? 0 : Infinity;
+          }
+
+          // 4. Update the Results View
+          
+          // Clean & format
+          const f0_tex = parsedExpression.toTex({ parenthesis: 'keep' });
+          katex.render(`f(${parsedVals.x}, ${parsedVals.y}, ${parsedVals.z}) = ${formatNumber(f0)}`, resFVal, { throwOnError: false });
+
+          // Render partial derivatives list
+          if (derivativeElementsHtml.length > 0) {
+            resDerivatives.innerHTML = derivativeElementsHtml.join('');
+          } else {
+            resDerivatives.innerHTML = '<p class="text-xs text-slate-500 italic">La función es constante. No hay derivadas parciales activas.</p>';
+          }
+
+          // Render math formulas for errors
+          katex.render(`\\Delta f = ${formatNumber(absErrorContribution)}`, resAbsErrorMath, { throwOnError: false });
+          
+          const relErrString = Number.isFinite(relativeError) ? formatNumber(relativeError) : '\\infty';
+          katex.render(`\\rho^{\\circ} f = ${relErrString}`, resRelErrorMath, { throwOnError: false });
+
+          const pctErrString = Number.isFinite(percentError) ? `${formatNumber(percentError)}\\%` : '\\infty';
+          katex.render(`\\delta\\% = ${pctErrString}`, resPercentMath, { throwOnError: false });
+
+          // Colored badge for percent error class
+          if (percentError < 1.0) {
+            resPercentBadge.textContent = 'Bajo < 1%';
+            resPercentBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400';
+          } else if (percentError <= 5.0) {
+            resPercentBadge.textContent = 'Moderado 1-5%';
+            resPercentBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-amber-500/10 border border-amber-500/20 text-amber-400';
+          } else {
+            resPercentBadge.textContent = 'Alto > 5%';
+            resPercentBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-rose-500/10 border border-rose-500/20 text-rose-400';
+          }
+
+          // Engineering notation
+          resEngineeringNotation.textContent = `${formatNumber(f0)} ± ${formatNumber(absErrorContribution)}`;
+
+          // Refresh KaTeX rendering inside the newly generated derivatives
+          if (window.katex) {
+            ['x', 'y', 'z'].forEach(symbol => {
+              const el = document.getElementById(`deriv-calc-${symbol}`);
+              if (el) {
+                // Find formulas inside and render them
+                const formulaEl = el.querySelector('.font-mono');
+                if (formulaEl) {
+                  const rawTex = formulaEl.textContent.trim().replace(/^\\\(|\\\)$/g, '');
+                  katex.render(rawTex, formulaEl, { throwOnError: false });
+                }
+              }
+            });
+          }
+
+          // Swap panels states
+          preCalcState.classList.add('hidden');
+          postCalcState.classList.remove('hidden');
+          notationCard.classList.remove('hidden');
+
+        } catch (err) {
+          console.error(err);
+          showAlert('Ocurrió un error matemático al evaluar la función o calcular sus derivadas. Verifique que no existan indeterminaciones o valores fuera del dominio.');
+        }
+      }
+
+      // Formatting helper for rendering floats
+      function formatNumber(num) {
+        if (num === null || num === undefined) return '';
+        if (num === Infinity) return '∞';
+        if (num === -Infinity) return '-∞';
+        if (isNaN(num)) return 'NaN';
+        
+        // If absolute value is tiny, use scientific notation
+        const absNum = Math.abs(num);
+        if (absNum > 0 && (absNum < 1e-4 || absNum >= 1e6)) {
+          return num.toExponential(6);
+        }
+        
+        // Otherwise, format with up to 6 decimal places cleanly
+        return parseFloat(num.toFixed(6)).toString();
+      }
+
+      // Keyboard inserts
+      function insertTextAtCursor(text, offset = 0) {
+        const start = functionInput.selectionStart;
+        const end = functionInput.selectionEnd;
+        const value = functionInput.value;
+        functionInput.value = value.slice(0, start) + text + value.slice(end);
+        functionInput.focus();
+        const position = Math.max(0, start + text.length + offset);
+        functionInput.setSelectionRange(position, position);
+        handleFunctionInput();
+      }
+
+      const insertButtons = document.querySelectorAll('[data-insert]');
+      insertButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const text = button.getAttribute('data-insert');
+          const offset = Number(button.getAttribute('data-cursor') || '0');
+          insertTextAtCursor(text, offset);
+        });
+      });
+
+      // Clear function
+      function resetForm() {
+        functionInput.value = '';
+        ['x', 'y', 'z'].forEach(symbol => {
+          variableInputs[symbol].val.value = '';
+          variableInputs[symbol].err.value = '';
+        });
+        hideAlert();
+        handleFunctionInput();
+        preCalcState.classList.remove('hidden');
+        postCalcState.classList.add('hidden');
+        notationCard.classList.add('hidden');
+      }
+
+      // Event listeners
+      functionInput.addEventListener('input', handleFunctionInput);
+      calculateBtn.addEventListener('click', runCalculation);
+      resetBtn.addEventListener('click', resetForm);
+
+      // Initialize real-time rendering
+      handleFunctionInput();
     });
-
-    calculateBtn.addEventListener('click', () => {
-      calculate();
-    });
-
-    resetBtn.addEventListener('click', () => {
-      resetForm();
-    });
-
-    renderPreview();
   </script>
 </body>
 </html>
