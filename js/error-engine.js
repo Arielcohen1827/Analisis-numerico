@@ -166,10 +166,10 @@ function renderResult(data) {
   const resultUnitText = resultUnit ? ` ${escapeHtml(resultUnit)}` : '';
   const caseIntroHtml = data.caseTitle
     ? `
-      <section class="soft-panel mb-4 rounded-2xl p-4">
-        <p class="text-xs font-extrabold uppercase tracking-wide text-blue-700">${escapeHtml(data.caseArea)}</p>
-        <h3 class="mt-1 font-black">${escapeHtml(data.caseTitle)}</h3>
-        <p class="muted mt-1 text-sm">${escapeHtml(data.caseDescription)}</p>
+      <section class="r-case-intro">
+        <p class="font-black uppercase tracking-widest" style="font-size:.58rem; color: var(--blue);">${escapeHtml(data.caseArea)}</p>
+        <h3 class="mt-1 font-black text-base">${escapeHtml(data.caseTitle)}</h3>
+        <p class="muted mt-1 text-sm font-medium">${escapeHtml(data.caseDescription)}</p>
       </section>
     `
     : '';
@@ -195,12 +195,10 @@ function renderResult(data) {
     const derivativeLabel = `∂${data.resultLabel || 'f'}/∂${item.variable}`;
 
     return `
-      <article class="soft-panel rounded-2xl p-4">
+      <article class="r-deriv-card">
         <div class="mb-2 flex items-center justify-between gap-3">
-          <h4 class="font-black">Respecto de ${escapeHtml(item.variable)}</h4>
-          <span class="rounded-lg bg-blue-100 px-2 py-1 font-mono text-xs font-bold text-blue-700">
-            ${escapeHtml(derivativeLabel)}
-          </span>
+          <h4 class="font-black uppercase tracking-wide" style="font-size:.8rem;">Respecto de ${escapeHtml(item.variable)}</h4>
+          <span class="b-badge b-badge-blue" style="font-family: monospace;">${escapeHtml(derivativeLabel)}</span>
         </div>
         <div class="math-scroll">
           \\[
@@ -211,9 +209,9 @@ function renderResult(data) {
             =${formatNumber(item.derivativeValue)}
           \\]
         </div>
-        <p class="muted mt-2 text-sm">
+        <p class="muted mt-2 font-medium" style="font-size:.8rem;">
           Aporte a Δ${escapeHtml(data.resultLabel || 'f')}:
-          <strong>${formatNumber(Math.abs(item.derivativeValue))} × ${formatNumber(item.delta)} = ${formatNumber(item.contribution)}${resultUnitText}</strong>
+          <strong class="font-black" style="color: var(--fg);">${formatNumber(Math.abs(item.derivativeValue))} × ${formatNumber(item.delta)} = ${formatNumber(item.contribution)}${resultUnitText}</strong>
         </p>
       </article>
     `;
@@ -221,7 +219,7 @@ function renderResult(data) {
 
   const relativeContent = data.relativeError === null
     ? `
-      <p class="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+      <p class="font-semibold text-sm" style="border: 2px solid var(--border); border-left: 7px solid var(--yellow); background: #FEFCE8; color: #713F12; padding: .75rem 1rem;">
         Como ${escapeHtml(data.resultLabel || 'f')} = 0, el error relativo no está definido.
       </p>
     `
@@ -241,16 +239,14 @@ function renderResult(data) {
   resultPanel.innerHTML = `
     <div>
       <div class="mb-5">
-        <span class="mb-2 inline-block rounded-full bg-green-100 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-green-700">
-          Cálculo completado
-        </span>
-        <h2 class="text-2xl font-black">Resultados</h2>
+        <span class="b-badge b-badge-green mb-2 inline-block">Cálculo completado</span>
+        <h2 class="font-black uppercase tracking-tight" style="font-size: 1.5rem;">Resultados</h2>
       </div>
 
       ${caseIntroHtml}
 
-      <section class="soft-panel mb-4 rounded-2xl p-4">
-        <h3 class="mb-2 font-black">1. ${escapeHtml(resultName)} y punto</h3>
+      <section class="r-step r-step-blue mb-4">
+        <p class="r-step-label">1. ${escapeHtml(resultName)} y punto</p>
         <div class="math-scroll">
           \\[
             ${resultTex}=${data.expressionTex}
@@ -265,14 +261,14 @@ function renderResult(data) {
       </section>
 
       <section class="mb-4">
-        <h3 class="mb-3 font-black">2. Derivadas parciales</h3>
+        <div class="bauhaus-divider"><span>2. Derivadas parciales</span></div>
         <div class="space-y-3">
           ${derivativesHtml}
         </div>
       </section>
 
-      <section class="mb-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-slate-900">
-        <h3 class="mb-2 font-black text-blue-800">3. Propagación del error absoluto</h3>
+      <section class="r-step r-step-red mb-4">
+        <p class="r-step-label">3. Propagación del error absoluto</p>
         <div class="math-scroll">
           \\[
             \\Delta ${resultTex}=${generalTermsTex}
@@ -286,8 +282,8 @@ function renderResult(data) {
         </div>
       </section>
 
-      <section class="mb-4 rounded-2xl bg-slate-900 p-5 text-white">
-        <p class="mb-2 text-sm font-bold uppercase tracking-wide text-blue-200">Notación de ingeniería</p>
+      <section class="r-dark mb-4">
+        <p class="r-sublabel">Notación de ingeniería</p>
         <div class="math-scroll text-xl">
           \\[
             \\boxed{${resultTex}=(${formatNumber(data.functionValue)}\\pm${formatNumber(data.absoluteError)})${resultUnitTex}}
@@ -295,8 +291,8 @@ function renderResult(data) {
         </div>
       </section>
 
-      <section class="soft-panel rounded-2xl p-4">
-        <h3 class="mb-2 font-black">4. Error relativo y porcentual</h3>
+      <section class="r-step r-step-yellow">
+        <p class="r-step-label">4. Error relativo y porcentual</p>
         ${relativeContent}
       </section>
     </div>

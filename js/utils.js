@@ -103,21 +103,16 @@ function naturalLogTex(tex) {
 function showAlert(title, message, type = 'error') {
   const box = $('alertBox');
 
-  box.classList.remove(
-    'hidden',
-    'border-red-300', 'bg-red-50', 'text-red-800',
-    'border-amber-300', 'bg-amber-50', 'text-amber-900',
-    'border-green-300', 'bg-green-50', 'text-green-800'
-  );
+  box.classList.remove('hidden', 'alert-error', 'alert-warning', 'alert-success');
 
   const styles = {
-    error: ['border-red-300', 'bg-red-50', 'text-red-800'],
-    warning: ['border-amber-300', 'bg-amber-50', 'text-amber-900'],
-    success: ['border-green-300', 'bg-green-50', 'text-green-800']
+    error:   'alert-error',
+    warning: 'alert-warning',
+    success: 'alert-success'
   };
 
-  box.classList.add(...(styles[type] || styles.error));
-  $('alertTitle').textContent = title;
+  box.classList.add(styles[type] || styles.error);
+  $('alertTitle').textContent   = title;
   $('alertMessage').textContent = message;
   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -128,13 +123,6 @@ function hideAlert() {
 
 function setSyntaxStatus(kind, text) {
   syntaxStatus.textContent = text;
-  syntaxStatus.className = 'rounded-full px-2.5 py-1 text-xs font-bold';
-
-  if (kind === 'valid') {
-    syntaxStatus.classList.add('bg-green-100', 'text-green-700');
-  } else if (kind === 'invalid') {
-    syntaxStatus.classList.add('bg-red-100', 'text-red-700');
-  } else {
-    syntaxStatus.classList.add('bg-slate-200', 'text-slate-600');
-  }
+  const map = { valid: 'b-badge-green', invalid: 'b-badge-red' };
+  syntaxStatus.className = `b-badge ${map[kind] ?? 'b-badge-muted'}`;
 }

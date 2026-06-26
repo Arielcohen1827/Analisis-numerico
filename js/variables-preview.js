@@ -45,7 +45,7 @@ function renderVariableInputs(variables) {
       : null;
 
     const card = document.createElement('div');
-    card.className = 'soft-panel rounded-2xl p-4';
+    card.className = 'var-card';
 
     const safeVariable = escapeHtml(variable);
     const variableTitle = variableInfo
@@ -55,13 +55,13 @@ function renderVariableInputs(variables) {
     const valuePlaceholder = variableInfo?.value || 'Ej.: 2.5';
     const deltaPlaceholder = variableInfo?.delta || 'Ej.: 0.01';
     const instrumentHtml = variableInfo?.instrument
-      ? `<p class="muted mb-3 text-xs">Instrumento o fuente: ${escapeHtml(variableInfo.instrument)}</p>`
+      ? `<p class="muted mb-3 font-medium" style="font-size:.72rem;">Instrumento: ${escapeHtml(variableInfo.instrument)}</p>`
       : '';
 
     card.innerHTML = `
       <div class="mb-3 flex items-center justify-between">
-        <h3 class="text-lg font-black">${escapeHtml(variableTitle)}</h3>
-        <span class="rounded-lg bg-blue-100 px-2.5 py-1 font-mono text-sm font-bold text-blue-700">${safeVariable}</span>
+        <h3 class="font-black uppercase tracking-wide" style="font-size:.85rem;">${escapeHtml(variableTitle)}</h3>
+        <span class="b-badge b-badge-yellow" style="font-family: monospace;">${safeVariable}</span>
       </div>
       ${instrumentHtml}
 

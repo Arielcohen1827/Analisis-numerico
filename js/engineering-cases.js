@@ -266,10 +266,10 @@ function renderEngineeringCaseDetails(caseId) {
 
   const variablesHtml = Object.entries(item.variables)
     .map(([symbol, info]) => `
-      <span class="case-detail-pill inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold">
-        <span class="font-mono">${escapeHtml(symbol)}</span>
-        <span class="muted">${escapeHtml(info.label)}</span>
-        <span>${escapeHtml(info.value)} ± ${escapeHtml(info.delta)} ${escapeHtml(info.unit)}</span>
+      <span class="case-detail-pill inline-flex items-center gap-2 px-2.5 py-1">
+        <span class="font-mono font-black" style="color: var(--blue);">${escapeHtml(symbol)}</span>
+        <span class="muted font-medium" style="font-size:.75rem;">${escapeHtml(info.label)}</span>
+        <span class="font-bold" style="font-size:.75rem;">${escapeHtml(info.value)} ± ${escapeHtml(info.delta)} ${escapeHtml(info.unit)}</span>
       </span>
     `)
     .join('');
@@ -278,17 +278,17 @@ function renderEngineeringCaseDetails(caseId) {
   details.innerHTML = `
     <div class="flex flex-col gap-3">
       <div>
-        <p class="text-xs font-extrabold uppercase tracking-wide text-blue-700">${escapeHtml(item.area)}</p>
-        <h3 class="text-base font-black">${escapeHtml(item.title)}</h3>
-        <p class="muted mt-1 text-sm">${escapeHtml(item.description)}</p>
+        <p class="font-black uppercase tracking-widest" style="font-size:.58rem; color: var(--blue);">${escapeHtml(item.area)}</p>
+        <h3 class="font-black text-base mt-0.5">${escapeHtml(item.title)}</h3>
+        <p class="muted mt-1 text-sm font-medium">${escapeHtml(item.description)}</p>
       </div>
 
       <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <p class="case-detail-pill rounded-xl border px-3 py-2 font-mono text-sm">
+        <p class="case-detail-pill px-3 py-2 font-mono text-sm">
           ${escapeHtml(item.resultLabel)} = ${escapeHtml(item.expression)}
         </p>
-        <p class="text-sm font-bold">
-          Unidad resultado: ${escapeHtml(item.resultUnit || 'sin unidad')}
+        <p class="font-bold uppercase tracking-wide" style="font-size:.72rem;">
+          Resultado: ${escapeHtml(item.resultUnit || 'sin unidad')}
         </p>
       </div>
 
