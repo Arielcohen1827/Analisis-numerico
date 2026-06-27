@@ -1,8 +1,22 @@
+/**
+ * Archivo: error-engine.js
+ *
+ * Descripcion:
+ * Contiene el motor principal de propagacion de errores y el renderizado
+ * del desarrollo matematico obtenido.
+ *
+ * Relacion con el proyecto:
+ * Implementa el metodo de Taylor de primer orden descripto en Informe.md,
+ * usando math.js para evaluar funciones y derivadas parciales.
+ */
 'use strict';
 
-// -----------------------------
-// Motor matemático
-// -----------------------------
+/**
+ * Ejecuta el calculo completo de propagacion de errores.
+ * Valida la expresion y los datos ingresados, evalua la funcion, deriva
+ * simbolicamente cada variable, suma los aportes de error y guarda el ultimo
+ * resultado calculado antes de mostrarlo en pantalla.
+ */
 function calculatePropagation() {
   hideAlert();
   clearInputErrors();
@@ -158,6 +172,12 @@ function calculatePropagation() {
   }
 }
 
+/**
+ * Construye el panel visual con el resultado del calculo.
+ * Modifica el DOM para mostrar funcion evaluada, punto de trabajo, derivadas
+ * parciales, error absoluto, error relativo, porcentaje y notacion final con
+ * incertidumbre.
+ */
 function renderResult(data) {
   const resultTex = data.resultTex || 'f';
   const resultName = data.resultName || 'Resultado';
@@ -302,7 +322,6 @@ function renderResult(data) {
   resultPanel.classList.remove('hidden');
 
   safeTypeset([resultPanel]).then?.(() => {
-    // El encadenamiento opcional evita errores si MathJax aún no terminó de cargar.
   });
 
   resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });

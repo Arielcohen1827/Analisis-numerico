@@ -1,12 +1,22 @@
+/**
+ * Archivo: input-validation.js
+ *
+ * Descripcion:
+ * Agrupa las validaciones numericas necesarias antes de ejecutar el calculo.
+ *
+ * Relacion con el proyecto:
+ * Lee los campos dinamicos generados por variables-preview.js y entrega los
+ * valores que error-engine.js utiliza para evaluar la funcion y sus derivadas.
+ */
 'use strict';
 
-// -----------------------------
-// Lectura y validación de datos
-// -----------------------------
+/**
+ * Convierte el texto de entrada en un numero real finito.
+ * Acepta coma o punto decimal, pero rechaza expresiones, texto o valores
+ * que no correspondan a una medicion numerica directa.
+ */
 function parseStrictReal(rawValue) {
   const trimmed = String(rawValue).trim();
-
-  // Admite punto o coma decimal, pero no expresiones matemáticas.
   const normalized = trimmed.replace(',', '.');
   const realPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
 
@@ -18,12 +28,22 @@ function parseStrictReal(rawValue) {
   return Number.isFinite(value) ? value : null;
 }
 
+/**
+ * Quita las marcas visuales de error de los campos de entrada.
+ * Modifica el DOM para preparar una nueva validacion sin arrastrar estados
+ * visuales de intentos anteriores.
+ */
 function clearInputErrors() {
   document.querySelectorAll('.field.invalid').forEach((input) => {
     input.classList.remove('invalid');
   });
 }
 
+/**
+ * Lee y valida los valores aproximados y las cotas de error cargadas por el usuario.
+ * Construye los objetos que necesita el motor de calculo y marca en pantalla
+ * los campos invalidos cuando falta informacion numerica valida.
+ */
 function collectScopeAndDeltas(variables) {
   clearInputErrors();
 

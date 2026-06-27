@@ -1,8 +1,21 @@
+/**
+ * Archivo: utils.js
+ *
+ * Descripcion:
+ * Reune utilidades generales de formato, seguridad visual, normalizacion y
+ * mensajes de interfaz.
+ *
+ * Relacion con el proyecto:
+ * Estas funciones son usadas por la vista previa, el motor de calculo, las
+ * plantillas de ingenieria y el renderizado de resultados.
+ */
 'use strict';
 
-// -----------------------------
-// Utilidades
-// -----------------------------
+/**
+ * Prepara texto para insertarlo de forma segura dentro de HTML generado.
+ * Evita que datos de entrada o informacion de plantillas sean interpretados
+ * como etiquetas por el navegador.
+ */
 function escapeHtml(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -12,6 +25,11 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+/**
+ * Prepara texto para mostrarlo dentro de una expresion LaTeX.
+ * Protege caracteres especiales para que MathJax pueda renderizar mensajes
+ * sin romper la formula.
+ */
 function escapeLatexText(value) {
   return String(value)
     .replaceAll('\\', '\\textbackslash{}')
@@ -23,6 +41,11 @@ function escapeLatexText(value) {
     .replaceAll('&', '\\&');
 }
 
+/**
+ * Formatea resultados numericos para mostrarlos de manera clara.
+ * Usa notacion comun o cientifica segun la magnitud, manteniendo legibilidad
+ * en los pasos del calculo.
+ */
 function formatNumber(value, precision = 10) {
   const n = Number(value);
 
@@ -43,6 +66,10 @@ function formatNumber(value, precision = 10) {
   return Number(n.toPrecision(precision)).toString();
 }
 
+/**
+ * Convierte unidades de texto a una representacion compatible con TeX.
+ * Permite mostrar unidades fisicas junto a los resultados sin afectar el calculo.
+ */
 function formatUnitTex(unit) {
   const normalized = String(unit || '').trim();
 
@@ -61,10 +88,19 @@ function formatUnitTex(unit) {
   return `\\;\\mathrm{${texUnit}}`;
 }
 
+/**
+ * Comprueba que un resultado numerico sea real y finito.
+ * Se usa para detectar valores fuera del dominio o resultados que no pueden
+ * presentarse como mediciones validas.
+ */
 function isFiniteReal(value) {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+/**
+ * Solicita el renderizado de formulas con MathJax cuando la libreria esta disponible.
+ * Evita que la aplicacion falle si MathJax todavia no termino de cargar.
+ */
 function safeTypeset(elements = undefined) {
   if (!window.MathJax || !window.MathJax.typesetPromise) {
     return Promise.resolve();
@@ -78,28 +114,45 @@ function safeTypeset(elements = undefined) {
   return promise;
 }
 
+/**
+ * Dispara manualmente el evento de cambio del campo de funcion.
+ * Permite que inserciones realizadas por el teclado cientifico actualicen
+ * la vista previa y las variables como si el usuario hubiera escrito.
+ */
 function dispatchFunctionInput() {
   functionInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+/**
+ * Adapta la expresion escrita por el usuario a la sintaxis que espera math.js.
+ * Traduce simbolos visuales y conserva una escritura mas natural para el
+ * logaritmo natural dentro de la interfaz.
+ */
 function normalizeExpression(expression) {
   return expression
     .replaceAll('×', '*')
     .replaceAll('÷', '/')
     .replaceAll('−', '-')
-    // Math.js usa log(x) para el logaritmo natural.
-    // La interfaz permite escribir ln(x) y lo convierte solo internamente.
     .replace(/\bln\s*\(/gi, 'log(')
     .trim();
 }
 
+/**
+ * Ajusta la representacion TeX para mostrar el logaritmo natural como ln.
+ * El cambio es visual y mantiene coherencia entre lo que escribe el usuario
+ * y lo que se muestra en pantalla.
+ */
 function naturalLogTex(tex) {
-  // Conserva log10 como base 10 y muestra únicamente log(...) natural como ln(...).
   return String(tex)
     .replace(/\\log\\left/g, '\\ln\\left')
     .replace(/\\operatorname\{log\}\\left/g, '\\ln\\left');
 }
 
+/**
+ * Muestra una alerta informativa en la interfaz.
+ * Modifica el DOM para comunicar errores, advertencias o confirmaciones durante
+ * la carga de datos y el calculo.
+ */
 function showAlert(title, message, type = 'error') {
   const box = $('alertBox');
 
@@ -117,10 +170,19 @@ function showAlert(title, message, type = 'error') {
   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+/**
+ * Oculta la alerta principal de la pagina.
+ * Solo modifica el estado visual del mensaje, sin alterar los datos ingresados.
+ */
 function hideAlert() {
   $('alertBox').classList.add('hidden');
 }
 
+/**
+ * Actualiza la etiqueta que informa el estado de la expresion matematica.
+ * Cambia el texto y las clases visuales para indicar si la sintaxis es valida,
+ * invalida o esta pendiente.
+ */
 function setSyntaxStatus(kind, text) {
   syntaxStatus.textContent = text;
   const map = { valid: 'b-badge-green', invalid: 'b-badge-red' };

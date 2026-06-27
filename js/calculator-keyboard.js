@@ -1,8 +1,21 @@
+/**
+ * Archivo: calculator-keyboard.js
+ *
+ * Descripcion:
+ * Implementa el teclado cientifico en pantalla para escribir funciones
+ * matematicas en el modo libre de la calculadora.
+ *
+ * Relacion con el proyecto:
+ * Modifica el campo de funcion de index.html y dispara la actualizacion
+ * de vista previa y variables mediante los eventos definidos en app.js.
+ */
 'use strict';
 
-// -----------------------------
-// Teclado científico para modo libre
-// -----------------------------
+/**
+ * Inserta simbolos, operadores o plantillas matematicas en la posicion
+ * actual del cursor. Despues de modificar el campo principal, fuerza la
+ * actualizacion de la vista previa y de las variables detectadas.
+ */
 function insertAtCursor(text, cursorOffset = 0) {
   if (functionInput.readOnly) return;
 
@@ -22,6 +35,11 @@ function insertAtCursor(text, cursorOffset = 0) {
   dispatchFunctionInput();
 }
 
+/**
+ * Elimina contenido del campo de funcion respetando la posicion actual
+ * del cursor o la seleccion activa. Luego actualiza la interfaz para que
+ * la vista previa refleje el nuevo texto.
+ */
 function backspaceAtCursor() {
   if (functionInput.readOnly) return;
 
@@ -42,6 +60,10 @@ function backspaceAtCursor() {
   dispatchFunctionInput();
 }
 
+/**
+ * Mueve el cursor dentro del campo de funcion sin cambiar la expresion.
+ * Permite navegar la formula desde los controles del teclado cientifico.
+ */
 function moveCursor(direction) {
   const start = functionInput.selectionStart ?? 0;
   const end = functionInput.selectionEnd ?? start;
@@ -53,6 +75,11 @@ function moveCursor(direction) {
   functionInput.setSelectionRange(position, position);
 }
 
+/**
+ * Configura los botones del teclado cientifico.
+ * Cada boton declara en el HTML la accion que debe ejecutar, y este bloque
+ * traduce esa accion en inserciones, borrado, limpieza o movimiento del cursor.
+ */
 document.querySelectorAll('.calc-key').forEach((button) => {
   button.addEventListener('click', () => {
     const insert = button.dataset.insert;
@@ -83,4 +110,3 @@ document.querySelectorAll('.calc-key').forEach((button) => {
     }
   });
 });
-

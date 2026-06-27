@@ -1,11 +1,24 @@
+/**
+ * Archivo: engineering-cases.js
+ *
+ * Descripcion:
+ * Contiene el catalogo de problemas tipicos de ingenieria y las funciones
+ * que permiten cargar, mostrar y sincronizar esas plantillas.
+ *
+ * Relacion con el proyecto:
+ * Se conecta con el selector de plantillas de index.html, aporta unidades
+ * y metadatos al resultado, y complementa el motor de calculo explicado
+ * en Informe.md.
+ */
 'use strict';
-
-// -----------------------------
-// Plantillas de problemas de ingenieria
-// -----------------------------
 let selectedEngineeringCaseId = null;
 let isApplyingEngineeringCase = false;
 
+/**
+ * Catalogo de plantillas precargadas usadas como ejemplos de ingenieria.
+ * Cada entrada define la formula, el nombre del resultado, su unidad y
+ * valores sugeridos para las variables medidas.
+ */
 const ENGINEERING_CASES = [
   {
     id: 'sphere-volume-diameter',
@@ -144,14 +157,28 @@ const ENGINEERING_CASES = [
   }
 ];
 
+/**
+ * Busca una plantilla dentro del catalogo de casos de ingenieria.
+ * Devuelve el caso correspondiente cuando existe y permite que los demas
+ * modulos trabajen con la misma fuente de informacion.
+ */
 function getEngineeringCase(caseId) {
   return ENGINEERING_CASES.find((item) => item.id === caseId) || null;
 }
 
+/**
+ * Obtiene la plantilla que esta activa en la interfaz.
+ * Sirve para distinguir entre el modo de plantilla y el modo de funcion libre.
+ */
 function getCurrentEngineeringCase() {
   return selectedEngineeringCaseId ? getEngineeringCase(selectedEngineeringCaseId) : null;
 }
 
+/**
+ * Compara una expresion matematica con las plantillas disponibles.
+ * Ayuda a reconocer si una formula corresponde a un caso conocido y evita
+ * asociar metadatos incorrectos cuando la expresion fue modificada.
+ */
 function findEngineeringCaseForExpression(expression, caseTitle = '') {
   const normalizedExpression = normalizeExpression(expression || '');
 
@@ -162,11 +189,21 @@ function findEngineeringCaseForExpression(expression, caseTitle = '') {
   }) || null;
 }
 
+/**
+ * Obtiene la informacion descriptiva de una variable dentro del caso activo.
+ * Permite mostrar etiquetas, unidades, instrumentos y valores sugeridos en
+ * las tarjetas dinamicas de entrada.
+ */
 function getEngineeringVariableInfo(variable) {
   const currentCase = getCurrentEngineeringCase();
   return currentCase?.variables?.[variable] || null;
 }
 
+/**
+ * Construye la informacion descriptiva que acompana al resultado calculado.
+ * En modo libre usa etiquetas genericas, y en modo plantilla usa nombre,
+ * unidad y descripcion del caso de ingenieria seleccionado.
+ */
 function getCurrentResultMeta() {
   const currentCase = getCurrentEngineeringCase();
 
@@ -193,6 +230,11 @@ function getCurrentResultMeta() {
   };
 }
 
+/**
+ * Inicializa el selector de plantillas de ingenieria.
+ * Renderiza las opciones disponibles y registra los eventos que muestran
+ * detalles o cargan una plantilla en la calculadora.
+ */
 function initializeEngineeringCases() {
   const select = $('caseSelect');
   const loadButton = $('loadCaseBtn');
@@ -216,6 +258,11 @@ function initializeEngineeringCases() {
   });
 }
 
+/**
+ * Reinicia la seleccion de plantilla y limpia el panel de detalles.
+ * Modifica el estado compartido asociado al caso activo y vuelve la interfaz
+ * al modo de funcion libre.
+ */
 function resetEngineeringCaseSelection() {
   selectedEngineeringCaseId = null;
 
@@ -225,6 +272,11 @@ function resetEngineeringCaseSelection() {
   renderEngineeringCaseDetails('');
 }
 
+/**
+ * Construye las opciones del selector de plantillas agrupadas por area.
+ * Modifica el DOM para que el usuario pueda elegir un problema tipico antes
+ * de cargarlo en el campo principal.
+ */
 function renderEngineeringCaseOptions(select) {
   select.innerHTML = '';
 
@@ -252,6 +304,11 @@ function renderEngineeringCaseOptions(select) {
   });
 }
 
+/**
+ * Muestra el resumen visual de una plantilla seleccionada.
+ * Actualiza el DOM con area, titulo, descripcion, formula, unidad del resultado
+ * y datos sugeridos de las variables.
+ */
 function renderEngineeringCaseDetails(caseId) {
   const details = $('caseDetails');
   if (!details) return;
@@ -297,6 +354,11 @@ function renderEngineeringCaseDetails(caseId) {
   `;
 }
 
+/**
+ * Carga una plantilla en la calculadora.
+ * Actualiza el campo de funcion, prepara la cache de valores y sincroniza
+ * los campos dinamicos que aparecen despues de detectar las variables.
+ */
 function loadEngineeringCase(caseId) {
   const item = getEngineeringCase(caseId);
   if (!item) return;
@@ -323,6 +385,11 @@ function loadEngineeringCase(caseId) {
   }, 160);
 }
 
+/**
+ * Actualiza los metadatos de la plantilla activa.
+ * Sin cambiar la formula por si misma, mantiene sincronizados el selector,
+ * el estado compartido y el panel de detalles.
+ */
 function selectEngineeringCaseMetadata(caseId) {
   const item = getEngineeringCase(caseId);
   selectedEngineeringCaseId = item?.id || null;
@@ -333,6 +400,10 @@ function selectEngineeringCaseMetadata(caseId) {
   renderEngineeringCaseDetails(item?.id || '');
 }
 
+/**
+ * Copia los valores sugeridos de la plantilla a los campos dinamicos.
+ * Trabaja sobre el DOM despues de que las tarjetas de variables fueron creadas.
+ */
 function syncEngineeringCaseInputs() {
   const currentCase = getCurrentEngineeringCase();
   if (!currentCase) return;
@@ -347,6 +418,11 @@ function syncEngineeringCaseInputs() {
   });
 }
 
+/**
+ * Quita la plantilla activa cuando la formula deja de coincidir con el caso.
+ * Evita que el resultado muestre nombres, unidades o descripciones de una
+ * plantilla que ya no representa la expresion actual.
+ */
 function clearEngineeringCaseSelection() {
   selectedEngineeringCaseId = null;
 
@@ -356,6 +432,11 @@ function clearEngineeringCaseSelection() {
   renderEngineeringCaseDetails('');
 }
 
+/**
+ * Verifica si la expresion escrita sigue correspondiendo a la plantilla activa.
+ * Cuando el usuario edita manualmente la formula, limpia la seleccion para
+ * mantener coherente el modo de trabajo.
+ */
 function syncEngineeringCaseWithExpression() {
   const currentCase = getCurrentEngineeringCase();
 

@@ -1,8 +1,21 @@
+/**
+ * Archivo: variables-preview.js
+ *
+ * Descripcion:
+ * Controla la vista previa de la funcion y la generacion dinamica de campos
+ * para las variables detectadas.
+ *
+ * Relacion con el proyecto:
+ * Usa expression.js para analizar formulas, state.js para conservar valores
+ * temporales y MathJax para mostrar la notacion matematica en index.html.
+ */
 'use strict';
 
-// -----------------------------
-// Vista previa y variables dinámicas
-// -----------------------------
+/**
+ * Guarda temporalmente los valores escritos en los campos de variables.
+ * Preserva la informacion del usuario cuando la expresion cambia y los campos
+ * dinamicos deben reconstruirse.
+ */
 function cacheCurrentVariableInputs() {
   currentVariables.forEach((variable) => {
     const valueInput = document.getElementById(`value_${variable}`);
@@ -17,6 +30,11 @@ function cacheCurrentVariableInputs() {
   });
 }
 
+/**
+ * Genera las tarjetas de entrada para las variables detectadas.
+ * Modifica el DOM, actualiza el contador visible y combina valores guardados
+ * con informacion proveniente de plantillas de ingenieria.
+ */
 function renderVariableInputs(variables) {
   if (!suspendVariableInputCache) {
     cacheCurrentVariableInputs();
@@ -100,6 +118,11 @@ function renderVariableInputs(variables) {
   });
 }
 
+/**
+ * Actualiza la vista previa matematica de la expresion actual.
+ * Valida la sintaxis, renderiza la formula con MathJax y reconstruye los
+ * campos dinamicos segun las variables encontradas.
+ */
 function renderPreview() {
   clearTimeout(previewTimer);
 
@@ -135,8 +158,6 @@ function renderPreview() {
 
       preview.innerHTML = `\\[\\text{${escapeLatexText('Expresión incompleta o inválida')}}\\]`;
       setSyntaxStatus('invalid', 'Revisar sintaxis');
-
-      // No se eliminan los campos mientras la expresión está temporalmente incompleta.
     }
 
     safeTypeset([preview]);
