@@ -60,8 +60,8 @@ function renderVariableInputs(variables) {
 
     card.innerHTML = `
       <div class="mb-3 flex items-center justify-between">
-        <h3 class="font-black uppercase tracking-wide" style="font-size:.85rem;">${escapeHtml(variableTitle)}</h3>
-        <span class="b-badge b-badge-yellow" style="font-family: monospace;">${safeVariable}</span>
+        <h3 class="case-sensitive-label font-black tracking-wide" style="font-size:.85rem;">${escapeHtml(variableTitle)}</h3>
+        <span class="case-sensitive-label b-badge b-badge-yellow" style="font-family: monospace;">${safeVariable}</span>
       </div>
       ${instrumentHtml}
 
