@@ -139,6 +139,9 @@ html.dark body {
 .b-badge-red    { background: var(--red); color: #fff; }
 .b-badge-muted  { background: var(--soft); color: var(--muted); }
 
+/* Conserva símbolos sensibles a mayúsculas, como m y M. */
+.case-sensitive-label { text-transform: none; }
+
 /* ── Alert Bauhaus ──────────────────────────────────────── */
 .alert-error {
   border: 2px solid var(--border);

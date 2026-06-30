@@ -197,8 +197,8 @@ function renderResult(data) {
     return `
       <article class="r-deriv-card">
         <div class="mb-2 flex items-center justify-between gap-3">
-          <h4 class="font-black uppercase tracking-wide" style="font-size:.8rem;">Respecto de ${escapeHtml(item.variable)}</h4>
-          <span class="b-badge b-badge-blue" style="font-family: monospace;">${escapeHtml(derivativeLabel)}</span>
+          <h4 class="case-sensitive-label font-black tracking-wide" style="font-size:.8rem;">Respecto de ${escapeHtml(item.variable)}</h4>
+          <span class="case-sensitive-label b-badge b-badge-blue" style="font-family: monospace;">${escapeHtml(derivativeLabel)}</span>
         </div>
         <div class="math-scroll">
           \\[
