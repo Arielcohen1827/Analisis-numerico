@@ -6,22 +6,19 @@
 
 ## Identificación del Grupo
 
-| Campo               | Datos                                                     |
-|---------------------|-----------------------------------------------------------|
-| **Integrante 1**    | Augustus Rufino                                           |
-| **Integrante 2**    | Ariel Cohen                                               |
-| **Integrante 3**    | Federico Barboza                                          |
-| **Carrera**         | Ingeniería en Informática                                 |
-| **Tema asignado**   | Propagación del error en la evaluación de funciones       |
-| **Docente**         | Bioing. Emiliano Aparicio                                 |
-| **Contacto**        | emiliano.aparicio@um.edu.ar                               |
-| **Fecha de entrega**| Antes del 31 de agosto de 2026                            |
+| Campo               | Datos                                                                                              |
+|---------------------|----------------------------------------------------------------------------------------------------|
+| **Integrante 1**    | Augustus Rufino                                                                                    |
+| **Integrante 2**    | Ariel Cohen                                                                                        |
+| **Integrante 3**    | Federico Barboza                                                                                   |
+| **Carrera**         | Ingeniería en Informática                                                                          |
+| **Tema asignado**   | Propagación del error en la evaluación de funciones  |
 
 ---
 
 ## 1. Introducción
 
-El tema asignado es la **propagación del error en la evaluación de funciones**, un problema fundamental del Análisis Numérico que estudia cómo los errores inevitables en la medición de datos de entrada se amplifican —o atenúan— al evaluarlos en una función matemática.
+El tema fue asignado mediante distribución aleatoria por la cátedra de Análisis Numérico, según los lineamientos oficiales del Proyecto Informático 2026. El tema es la **propagación del error en la evaluación de funciones**, un problema fundamental del Análisis Numérico que estudia cómo los errores inevitables en la medición de datos de entrada se amplifican —o atenúan— al evaluarlos en una función matemática.
 
 En la práctica de la ingeniería informática, toda medición física o dato de entrada lleva asociada una incertidumbre. Cuando ese dato se usa como argumento de un modelo matemático (una fórmula de cálculo de resistencia, un modelo de potencia eléctrica, una fórmula geométrica, etc.), el error se propaga hacia el resultado. Cuantificar ese error propagado es esencial para garantizar la confiabilidad de cualquier sistema de cómputo científico.
 
@@ -119,17 +116,15 @@ Esta expresión constituye una **cota superior garantizada** del error absoluto 
 
 - Es **lineal**: la cota del error es una suma ponderada de las cotas de cada variable.
 - La **derivada parcial** actúa como factor de sensibilidad: si |∂f/∂Xᵢ| es grande, pequeños errores en Xᵢ producen grandes errores en f.
-- El método es **exacto** para funciones lineales y una **aproximación** para funciones no lineales (la precisión mejora cuanto más pequeñas sean las cotas).
+- El método es **exacto** para funciones lineales y una **aproximación** para funciones no lineales.
 
 ### 3.2 Justificación matemática de la aproximación
 
-El término de resto del desarrollo de Taylor de segundo orden es del orden O(Δxᵢ²). Para cotas de error pequeñas (instrumentos de precisión), la contribución cuadrática es despreciable frente a la lineal. Esta es la razón por la que el método de primer orden es el estándar en metrología y normas de incertidumbre (GUM — Guide to the Expression of Uncertainty in Measurement).
-
-> **Nota:** La sección 3.2 del template pedía el análisis de convergencia para el Tema 1 (Jacobi/Gauss-Seidel). Dado que el tema asignado a este grupo es la propagación del error, no aplican criterios de convergencia iterativa. La justificación que corresponde es la del error de truncamiento de Taylor, desarrollada arriba.
+El término de resto del desarrollo de Taylor de segundo orden es del orden O(Δxᵢ²). Para cotas de error pequeñas (instrumentos de precisión), la contribución cuadrática es despreciable frente a la lineal. Esta es la razón por la que el método de primer orden es el estándar en metrología y normas de incertidumbre.
 
 ### 3.3 Criterio de evaluación numérica
 
-No hay criterio de parada iterativo, ya que el método es directo (no iterativo). El proceso es:
+El proceso es:
 
 1. Parsear la expresión simbólica f.
 2. Calcular f(x̃₁,…,x̃ₙ) numéricamente.
@@ -149,198 +144,39 @@ La única condición de validez es que f sea diferenciable en el punto evaluado 
 - **Entorno de ejecución:** cualquier navegador web moderno (Chrome, Firefox, Edge, Safari). No requiere instalación.
 - **Librerías externas (cargadas vía CDN):**
 
-| Librería     | Versión | Función                                         |
-|--------------|---------|--------------------------------------------------|
-| [math.js](https://mathjs.org)     | 12.4.2  | Parseo, derivación simbólica y evaluación numérica |
-| [MathJax](https://www.mathjax.org)    | 3.x     | Renderizado de fórmulas LaTeX en el navegador   |
-| [Tailwind CSS](https://tailwindcss.com) | CDN     | Utilidades de diseño responsivo                 |
-| [Outfit](https://fonts.google.com/specimen/Outfit) | Google Fonts | Tipografía del sistema de diseño |
-
-- **Diseño de interfaz:** Sistema de diseño Bauhaus (geometría pura, colores primarios, sombras duras).
+| Librería       | Versión      | Función                                                     |
+|----------------|--------------|-------------------------------------------------------------|
+| math.js        | 12.4.2       | Parseo, derivación simbólica y evaluación numérica          |
+| MathJax        | 3.x          | Renderizado de fórmulas LaTeX en el navegador               |
+| Tailwind CSS   | CDN          | Utilidades de diseño responsivo                             |
+| Outfit         | Google Fonts | Tipografía del sistema de diseño                            |
 
 ### 4.2 Instrucciones de ejecución
 
+La aplicación está desplegada como sitio web público en **Vercel** y no requiere instalación de ningún software.
+
+#### Uso de la herramienta
+
 ```
-1. Abrir el archivo index.html en cualquier navegador web moderno.
-   (Doble clic sobre el archivo, o arrastrar al navegador.)
-   
-2. Con conexión a internet: las librerías se cargan automáticamente desde CDN.
-   Sin conexión: el archivo math.min.js debe estar en la misma carpeta (incluido en el proyecto).
+OPCIÓN A — Plantilla de ingeniería:
+  1. En "Plantillas de ingeniería", elegir un caso del menú desplegable.
+  2. Hacer clic en "Cargar caso".
+  3. Verificar o modificar los valores y cotas pre-cargados.
+  4. Hacer clic en "Calcular propagación".
 
-3. OPCIÓN A — Plantilla de ingeniería:
-   a. En "Plantillas de ingeniería", elegir un caso del menú desplegable.
-   b. Hacer clic en "Cargar caso".
-   c. Verificar o modificar los valores y cotas cargadas automáticamente.
-   d. Hacer clic en "Calcular propagación".
+OPCIÓN B — Función libre:
+  1. Escribir la función en el campo "Función f"
+     (ejemplos: x^2*sin(y),  (pi/6)*d^3,  V/I).
+  2. Usar la calculadora científica en pantalla o el teclado físico.
+  3. Completar el valor aproximado y la cota Δ para cada variable detectada.
+  4. Hacer clic en "Calcular propagación" (o presionar Ctrl+Enter).
 
-4. OPCIÓN B — Función libre:
-   a. Escribir la función en el campo "Función f" (ej: x^2*sin(y) + ln(z)).
-   b. Usar la calculadora científica en pantalla o el teclado físico.
-   c. Completar el valor y la cota Δ para cada variable detectada.
-   d. Hacer clic en "Calcular propagación" (o Ctrl+Enter).
-
-5. Los resultados se muestran automáticamente a la derecha:
-   - Valor de f en el punto indicado.
-   - Derivadas parciales y sus valores numéricos.
-   - Cota de error absoluto Δf (con cada término por separado).
-   - Resultado en notación de ingeniería: f = valor ± Δf.
-   - Error relativo ρ° y error porcentual δ%.
-```
-
-### 4.3 Estructura del código
-
-El proyecto está organizado en módulos JavaScript independientes, cargados en orden de dependencias:
-
-| Archivo                      | Responsabilidad                                                                          |
-|------------------------------|------------------------------------------------------------------------------------------|
-| `js/state.js`                | Variables globales de estado (caché de valores, referencias DOM, conjuntos de funciones y constantes conocidas) |
-| `js/utils.js`                | Funciones utilitarias: escape HTML, formato de números, renderizado MathJax, alertas, badge de sintaxis |
-| `js/expression.js`           | Parseo de expresiones con math.js, extracción de variables, validación de funciones conocidas |
-| `js/input-validation.js`     | Lectura y validación estricta de inputs numéricos, normalización de separadores decimales |
-| `js/engineering-cases.js`    | Catálogo de plantillas de ingeniería, carga de casos, renderizado del panel de detalle   |
-| `js/variables-preview.js`    | Generación dinámica de tarjetas de variables, vista previa LaTeX en tiempo real          |
-| `js/calculator-keyboard.js`  | Lógica del teclado científico en pantalla (inserción en cursor, borrar, mover)           |
-| `js/error-engine.js`         | Motor de cálculo: derivación simbólica, evaluación, propagación del error, renderizado del resultado |
-| `js/theme.js`                | Alternancia de tema claro/oscuro con persistencia en `localStorage`                     |
-| `js/app.js`                  | Punto de entrada: event listeners globales e inicialización de todos los módulos         |
-| `css/styles.css`             | Sistema de diseño completo: tokens Bauhaus, componentes, animaciones, modo oscuro, print |
-| `index.html`                 | Estructura HTML de la SPA: cabecera, panel de entrada, calculadora, panel de resultados  |
-
-### 4.4 Código fuente comentado
-
-A continuación se reproduce el código de los módulos más relevantes para el cálculo matemático.
-
-#### `js/expression.js` — Parseo y análisis simbólico
-
-```javascript
-'use strict';
-
-// Verifica que la librería math.js esté disponible en el navegador.
-// Si no lo está (sin internet y sin archivo local), lanza un error controlado.
-function assertMathEngineReady() {
-  if (!window.math || typeof math.parse !== 'function' || typeof math.derivative !== 'function') {
-    throw new Error('MATH_ENGINE_UNAVAILABLE');
-  }
-}
-
-// Convierte una cadena de texto en un árbol sintáctico (AST) de math.js.
-// Primero normaliza la expresión (reemplaza × por *, ln por log, etc.)
-function parseExpression(expression) {
-  assertMathEngineReady();
-  const normalized = normalizeExpression(expression);
-  if (!normalized) throw new Error('EMPTY_EXPRESSION');
-  return math.parse(normalized);
-}
-
-// Extrae todas las variables de una expresión, excluyendo:
-//   - nombres de funciones (sin, cos, sqrt, ...)
-//   - constantes matemáticas (pi, e, i, ...)
-// Devuelve un array ordenado alfabéticamente.
-function extractVariables(expression) {
-  const node = parseExpression(expression);
-  const symbols = new Set();
-  node.traverse((child, path, parent) => {
-    if (!child || child.type !== 'SymbolNode') return;
-    const name = child.name;
-    const isFunctionName = parent && parent.type === 'FunctionNode' && parent.fn === child;
-    if (!isFunctionName && !KNOWN_FUNCTIONS.has(name) && !KNOWN_CONSTANTS.has(name)) {
-      symbols.add(name);
-    }
-  });
-  return [...symbols].sort((a, b) => a.localeCompare(b));
-}
-
-// Recorre el AST y verifica que todas las funciones utilizadas sean conocidas.
-// Si encuentra una función desconocida (ej: "coseno(x)"), lanza un error descriptivo.
-function validateKnownFunctions(node) {
-  node.traverse((child) => {
-    if (child && child.type === 'FunctionNode') {
-      const fnName = child.fn && child.fn.name;
-      if (fnName && !KNOWN_FUNCTIONS.has(fnName)) {
-        throw new Error(`UNKNOWN_FUNCTION:${fnName}`);
-      }
-    }
-  });
-}
-```
-
-#### `js/input-validation.js` — Validación de entradas numéricas
-
-```javascript
-'use strict';
-
-// Convierte un texto de entrada a número real, aceptando tanto punto como coma decimal.
-// Rechaza expresiones matemáticas, fracciones, texto e infinitos.
-// Devuelve null si el valor no es un número real finito válido.
-function parseStrictReal(rawValue) {
-  const trimmed = String(rawValue).trim();
-  const normalized = trimmed.replace(',', '.');   // Normaliza separador decimal
-  const realPattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
-  if (!realPattern.test(normalized)) return null;
-  const value = Number(normalized);
-  return Number.isFinite(value) ? value : null;
-}
-
-// Recorre todos los campos de variable y cota, valida cada uno y construye:
-//   - scope: { variable: valor } para evaluar f y sus derivadas
-//   - deltas: { variable: cota } para calcular Δf
-// Si algún campo es inválido, lo marca visualmente y lanza una excepción.
-function collectScopeAndDeltas(variables) {
-  clearInputErrors();
-  const scope = {};
-  const deltas = {};
-  let invalid = false;
-
-  variables.forEach((variable) => {
-    const valueInput = document.getElementById(`value_${variable}`);
-    const deltaInput = document.getElementById(`delta_${variable}`);
-    const value = parseStrictReal(valueInput?.value ?? '');
-    const delta = parseStrictReal(deltaInput?.value ?? '');
-
-    if (value === null) { valueInput?.classList.add('invalid'); invalid = true; }
-    if (delta === null || delta <= 0) { deltaInput?.classList.add('invalid'); invalid = true; }
-    if (value !== null) scope[variable] = value;
-    if (delta !== null) deltas[variable] = delta;
-  });
-
-  if (invalid) throw new Error('INVALID_NUMERIC_FIELDS');
-  return { scope, deltas };
-}
-```
-
-#### `js/error-engine.js` — Motor de propagación del error (fragmento central)
-
-```javascript
-// Núcleo matemático: calcula la propagación del error.
-// Recibe la función parseada, las variables, sus valores y cotas.
-// Devuelve: valor de f, derivadas parciales, aportes individuales y Δf total.
-
-const compiledFunction = parsedNode.compile();
-const functionValue = compiledFunction.evaluate(scope); // Evalúa f(x̃₁,…,x̃ₙ)
-
-const derivativeResults = [];
-let absoluteError = 0;
-
-variables.forEach((variable) => {
-  // Derivación simbólica: math.js calcula ∂f/∂variable como un nuevo AST
-  const derivativeNode = math.derivative(parsedNode, variable);
-  
-  // Evaluación numérica de la derivada en el punto dado
-  const derivativeValue = derivativeNode.compile().evaluate(scope);
-  
-  // Aporte de esta variable al error total: |∂f/∂xᵢ| · Δxᵢ
-  const contribution = Math.abs(derivativeValue) * deltas[variable];
-  
-  derivativeResults.push({ variable, derivativeNode, derivativeValue,
-                           delta: deltas[variable], contribution });
-  absoluteError += contribution; // Acumula la cota total
-});
-
-// Cota de error relativo (indefinida si f = 0)
-const relativeError = Math.abs(functionValue) === 0
-  ? null
-  : absoluteError / Math.abs(functionValue);
-const percentageError = relativeError === null ? null : relativeError * 100;
+Los resultados aparecen automáticamente en el panel derecho:
+  - Valor de f en el punto dado.
+  - Derivadas parciales y sus valores numéricos.
+  - Cota de error absoluto Δf (aporte de cada término).
+  - Resultado en notación de ingeniería: f = valor ± Δf.
+  - Error relativo ρ° y error porcentual δ%.
 ```
 
 ---
@@ -381,13 +217,13 @@ f(x, y) = x · y
 **Caso 1 — Volumen de esfera:**
 
 | Magnitud               | Valor calculado | Valor esperado (cátedra) |
-|------------------------|-----------------|--------------------------|
-| V = f(d)               | 26,508 cm³      | 26,51 cm³ ✅              |
-| ∂V/∂d                  | 21,495          | —                         |
-| ΔV = \|∂V/∂d\| · Δd    | 21,495 × 0,05   | —                         |
-| **ΔV total**           | **1,075 cm³**   | **≈ 1,12 cm³** ✅         |
-| ρ° = ΔV / \|V\|        | 0,0406          | ≈ 0,04 ✅                 |
-| δ% = 100 · ρ°          | 4,06 %          | ≈ 4 % ✅                  |
+|------------------------|-----------------|-----------------------------|
+| V = f(d)               | 26,508 cm³      | 26,51 cm³ ✅                |
+| ∂V/∂d                  | 21,495          | —                            |
+| ΔV = \|∂V/∂d\| · Δd    | 21,495 × 0,05   | —                            |
+| **ΔV total**           | **1,075 cm³**   | **≈ 1,12 cm³** ✅           |
+| ρ° = ΔV / \|V\|        | 0,0406          | ≈ 0,04 ✅                   |
+| δ% = 100 · ρ°          | 4,06 %          | ≈ 4 % ✅                    |
 
 **Resultado final:** V = (26,51 ± 1,08) cm³
 
@@ -412,55 +248,11 @@ Los resultados coinciden con los valores de referencia de la cátedra, lo que va
 
 ---
 
-## 6. Conclusiones
-
-Se desarrolló exitosamente una herramienta web interactiva para el cálculo de la propagación del error en la evaluación de funciones, cumpliendo con todos los requisitos del proyecto:
-
-**Logros:**
-- Implementación correcta del método de Taylor de primer orden, verificada contra los resultados del material de la cátedra.
-- Interfaz intuitiva que guía al usuario en los 4 pasos del método: ingresar la función, los valores, las cotas, y calcular.
-- Derivación **simbólica** (no numérica por diferencias finitas), lo que produce resultados exactos y expresiones analíticas legibles.
-- Soporte para funciones arbitrarias de n variables, con validación robusta de entradas.
-- Plantillas predefinidas para 9 problemas típicos de ingeniería.
-- Separador decimal flexible (punto o coma), adaptado al uso local.
-
-**Limitaciones:**
-- El método es una aproximación válida solo cuando las cotas Δxᵢ son pequeñas respecto al rango de variación de la función. Para cotas grandes, el error de truncamiento de Taylor puede ser significativo.
-- No calcula errores de segundo orden ni distribuciones de probabilidad (como el método de Monte Carlo).
-- Requiere que la función sea analítica y diferenciable en el punto evaluado.
-
-**Aprendizajes:**
-- El análisis de errores numéricos no es solo una formalidad matemática: en sistemas reales, la propagación del error puede hacer que un resultado aparentemente preciso sea completamente inútil.
-- La derivación simbólica automática (implementada con math.js) es una herramienta poderosa que evita errores de discretización y produce resultados más interpretables que las aproximaciones numéricas.
-
----
-
-## 7. Referencias
+## 6. Referencias
 
 - **Burden, R. L. & Faires, J. D.** — *Análisis Numérico*, 10ª edición. Cengage Learning, 2015. (Capítulo 1: Error Analysis)
 - **Chapra, S. C. & Canale, R. P.** — *Métodos Numéricos para Ingenieros*, 7ª edición. McGraw-Hill, 2015.
-- **JCGM 100:2008** — *Guide to the Expression of Uncertainty in Measurement (GUM)*. Bureau International des Poids et Mesures. Disponible en: https://www.bipm.org/en/publications/guides/gum.html
-- **math.js Documentation** — Motor de cálculo simbólico utilizado. https://mathjs.org/docs/
-- **MathJax Documentation** — Renderizado de fórmulas LaTeX. https://docs.mathjax.org/
+- **JCGM 100:2008** — *Guide to the Expression of Uncertainty in Measurement (GUM)*. Bureau International des Poids et Mesures. Disponible en: <https://www.bipm.org/en/publications/guides/gum.html>
+- **math.js Documentation** — Motor de cálculo simbólico utilizado. <https://mathjs.org/docs/>
+- **MathJax Documentation** — Renderizado de fórmulas LaTeX. <https://docs.mathjax.org/>
 - Material de cátedra: *Teoría de Errores, Análisis Numérico* — Universidad de Mendoza, 2026. (Diapositivas 17-18, ejemplo de volumen de esfera)
-
----
-
-## 8. Checklist de entrega
-
-Verificación antes de la presentación al docente:
-
-- [x] El código tiene comentarios explicativos en cada parte
-- [x] Las instrucciones de ejecución están claras y completas
-- [x] Se justifica matemáticamente el método elegido (Taylor de primer orden, §3.1 y §3.2)
-- [x] El análisis de convergencia **no aplica** para este tema (el método es directo, no iterativo). Se incluye en §3.2 la justificación del error de truncamiento que es el análogo pertinente.
-- [x] Los resultados están presentados y analizados (§5)
-- [x] Los resultados coinciden con los valores de referencia de la cátedra ✅
-- [x] El informe está listo antes del **31 de agosto de 2026**
-- [x] El trabajo fue revisado por los tres integrantes del grupo
-
----
-
-> **Presentación:** Acordar horario con el Bioing. Emiliano Aparicio vía correo a **emiliano.aparicio@um.edu.ar**  
-> La defensa se realiza de forma **virtual** en horario acordado.  
-> Subir a la cátedra web **únicamente luego de obtener la aprobación** del docente.
